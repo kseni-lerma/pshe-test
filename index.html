@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ПШЭ</title>
+    <title>ПШЭ Трекер - Учет штатных единиц</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <!-- Шапка -->
@@ -27,14 +28,11 @@
                 <button class="nav-btn" data-page="report">
                     <i class="fas fa-chart-bar"></i> Годовой отчет
                 </button>
-                <button class="nav-btn" data-page="settings">
-                    <i class="fas fa-cog"></i> Настройки
-                </button>
             </nav>
             <div class="user-info">
                 <span class="username" id="current-user">Сидоров С.С. (Отдел 1)</span>
-                <button class="btn btn-small" id="save-btn">
-                    <i class="fas fa-save"></i> Сохранить
+                <button class="btn btn-small" id="save-all-btn">
+                    <i class="fas fa-save"></i> Сохранить все
                 </button>
             </div>
         </div>
@@ -45,13 +43,9 @@
         <div class="container">
             <span id="status-message">Готов к работе</span>
             <div class="status-controls">
-                <button class="btn btn-small" id="export-btn">
-                    <i class="fas fa-download"></i> Экспорт
+                <button class="btn btn-small" id="help-btn">
+                    <i class="fas fa-question-circle"></i> Справка
                 </button>
-                <button class="btn btn-small" id="import-btn">
-                    <i class="fas fa-upload"></i> Импорт
-                </button>
-                <input type="file" id="import-file" accept=".json" style="display: none;">
             </div>
         </div>
     </div>
@@ -71,7 +65,20 @@
                     </div>
                     <div class="select-group">
                         <label for="month-select">Месяц:</label>
-                        <select id="month-select" class="form-select"></select>
+                        <select id="month-select" class="form-select">
+                            <option value="01">Январь 2025 (17 раб. дн.)</option>
+                            <option value="02">Февраль 2025 (19 раб. дн.)</option>
+                            <option value="03">Март 2025 (20 раб. дн.)</option>
+                            <option value="04">Апрель 2025 (22 раб. дн.)</option>
+                            <option value="05">Май 2025 (18 раб. дн.)</option>
+                            <option value="06">Июнь 2025 (21 раб. дн.)</option>
+                            <option value="07">Июль 2025 (23 раб. дн.)</option>
+                            <option value="08">Август 2025 (21 раб. дн.)</option>
+                            <option value="09">Сентябрь 2025 (22 раб. дн.)</option>
+                            <option value="10">Октябрь 2025 (23 раб. дн.)</option>
+                            <option value="11">Ноябрь 2025 (18 раб. дн.)</option>
+                            <option value="12">Декабрь 2025 (22 раб. дн.)</option>
+                        </select>
                     </div>
                     <button class="btn btn-primary" id="load-month-btn">
                         <i class="fas fa-sync"></i> Загрузить месяц
@@ -99,7 +106,7 @@
                                 <th>Табельный номер</th>
                                 <th>Статус</th>
                                 <th>Отпуск/больничный</th>
-                                <th>Рабочих дней в месяце</th>
+                                <th>Рабочих дней</th>
                                 <th>Доступно дней</th>
                                 <th id="bp1-header">BP01</th>
                                 <th id="bp2-header">BP02</th>
@@ -134,7 +141,7 @@
                         <i class="fas fa-check"></i> Сохранить распределение
                     </button>
                     <div class="formula-info">
-                        <strong>Формула расчета:</strong> Факт ПШЭ = Доля × (Доступно дней / Рабочих дней в месяце)
+                        <strong>Формула расчета:</strong> Факт ПШЭ = Доля × (Доступно дней / Рабочих дней)
                     </div>
                 </div>
             </div>
@@ -143,7 +150,7 @@
                 <div class="col">
                     <div class="card">
                         <div class="card-header">
-                            <h4><i class="fas fa-calendar-alt"></i> Производственный календарь</h4>
+                            <h4><i class="fas fa-calendar-alt"></i> Производственный календарь 2025</h4>
                         </div>
                         <div class="table-container">
                             <table class="compact-table" id="calendar-table">
@@ -154,7 +161,20 @@
                                         <th>Выходных</th>
                                     </tr>
                                 </thead>
-                                <tbody></tbody>
+                                <tbody>
+                                    <tr><td>Январь</td><td>17</td><td>14</td></tr>
+                                    <tr><td>Февраль</td><td>19</td><td>9</td></tr>
+                                    <tr><td>Март</td><td>20</td><td>11</td></tr>
+                                    <tr><td>Апрель</td><td>22</td><td>8</td></tr>
+                                    <tr><td>Май</td><td>18</td><td>13</td></tr>
+                                    <tr><td>Июнь</td><td>21</td><td>9</td></tr>
+                                    <tr><td>Июль</td><td>23</td><td>8</td></tr>
+                                    <tr><td>Август</td><td>21</td><td>10</td></tr>
+                                    <tr><td>Сентябрь</td><td>22</td><td>8</td></tr>
+                                    <tr><td>Октябрь</td><td>23</td><td>8</td></tr>
+                                    <tr><td>Ноябрь</td><td>18</td><td>12</td></tr>
+                                    <tr><td>Декабрь</td><td>22</td><td>9</td></tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -173,7 +193,9 @@
                                         <th>Тип</th>
                                     </tr>
                                 </thead>
-                                <tbody></tbody>
+                                <tbody>
+                                    <!-- Данные загружаются через JS -->
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -191,6 +213,7 @@
                     <button class="tab-btn" data-tab="bps">Бизнес-процессы</button>
                     <button class="tab-btn" data-tab="departments">Отделы и БП</button>
                     <button class="tab-btn" data-tab="pshe-data">Данные ПШЭ</button>
+                    <button class="tab-btn" data-tab="export">Экспорт/Импорт</button>
                 </div>
             </div>
 
@@ -217,18 +240,67 @@
                                     <th>Действия</th>
                                 </tr>
                             </thead>
-                            <tbody></tbody>
+                            <tbody id="employees-body">
+                                <!-- Данные загружаются через JS -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
             <div class="tab-content" id="absences-tab">
-                <!-- Таблица отпусков -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Отпуска и больничные</h3>
+                        <button class="btn btn-primary" id="add-absence-btn">
+                            <i class="fas fa-plus"></i> Добавить отсутствие
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="absences-data-table">
+                            <thead>
+                                <tr>
+                                    <th>Сотрудник</th>
+                                    <th>Дата начала</th>
+                                    <th>Дата завершения</th>
+                                    <th>Тип отсутствия</th>
+                                    <th>Дней</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="absences-body">
+                                <!-- Данные загружаются через JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <div class="tab-content" id="bps-tab">
-                <!-- Таблица БП -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Бизнес-процессы</h3>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Наименование</th>
+                                    <th>Департамент</th>
+                                    <th>Отдел</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>BP01</td><td>Анализ отчетности</td><td>Департамент 1</td><td>Отдел 1, Отдел 2</td></tr>
+                                <tr><td>BP02</td><td>Проведение проверок</td><td>Департамент 1</td><td>Отдел 1</td></tr>
+                                <tr><td>BP03</td><td>Мониторинг рисков</td><td>Департамент 1</td><td>Отдел 1</td></tr>
+                                <tr><td>BP05</td><td>Выездные проверки</td><td>Департамент 1</td><td>Отдел 2</td></tr>
+                                <tr><td>BP06</td><td>Консультирование банков</td><td>Департамент 1</td><td>Отдел 2</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <div class="tab-content" id="departments-tab">
@@ -262,7 +334,124 @@
             </div>
 
             <div class="tab-content" id="pshe-data-tab">
-                <!-- Таблица данных ПШЭ -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Данные ПШЭ</h3>
+                        <button class="btn btn-warning" id="clear-pshe-btn">
+                            <i class="fas fa-trash"></i> Очистить все данные ПШЭ
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="pshe-data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Сотрудник</th>
+                                    <th>Отдел</th>
+                                    <th>Месяц</th>
+                                    <th>Данные распределения</th>
+                                    <th>Дата сохранения</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pshe-data-body">
+                                <!-- Данные загружаются через JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="export-tab">
+                <div class="row">
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-download"></i> Экспорт данных</h4>
+                            </div>
+                            <div class="card-body">
+                                <p>Экспортируйте все данные системы в JSON файл для резервного копирования.</p>
+                                <div class="export-options">
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="export-employees" checked> Сотрудники
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="export-absences" checked> Отпуска и больничные
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="export-departments" checked> Отделы и БП
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="export-pshe" checked> Данные ПШЭ
+                                        </label>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" id="export-json-btn">
+                                    <i class="fas fa-file-export"></i> Экспорт в JSON
+                                </button>
+                                <button class="btn btn-secondary" id="export-csv-btn">
+                                    <i class="fas fa-file-csv"></i> Экспорт в CSV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-upload"></i> Импорт данных</h4>
+                            </div>
+                            <div class="card-body">
+                                <p>Импортируйте данные из JSON файла (ранее экспортированного из системы).</p>
+                                <div class="import-area">
+                                    <input type="file" id="import-file" accept=".json" class="form-control">
+                                    <div class="import-options">
+                                        <div class="form-group">
+                                            <label>
+                                                <input type="radio" name="import-mode" value="merge" checked> Объединить с текущими данными
+                                            </label>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>
+                                                <input type="radio" name="import-mode" value="replace"> Заменить все данные
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary" id="import-btn">
+                                        <i class="fas fa-file-import"></i> Импортировать данные
+                                    </button>
+                                    <div class="warning-box">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <strong>Внимание:</strong> Перед импортом рекомендуется сделать резервную копию текущих данных.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-database"></i> Управление хранилищем</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>Текущий размер данных в локальном хранилище: <span id="storage-size">0 KB</span></p>
+                        <div class="button-group">
+                            <button class="btn btn-warning" id="clear-storage-btn">
+                                <i class="fas fa-broom"></i> Очистить локальное хранилище
+                            </button>
+                            <button class="btn btn-danger" id="reset-all-btn">
+                                <i class="fas fa-redo"></i> Сбросить все к начальным данным
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -280,6 +469,9 @@
                     </div>
                     <button class="btn btn-primary" id="generate-report-btn">
                         <i class="fas fa-chart-line"></i> Сгенерировать отчет
+                    </button>
+                    <button class="btn btn-secondary" id="print-report-btn">
+                        <i class="fas fa-print"></i> Печать отчета
                     </button>
                 </div>
             </div>
@@ -299,7 +491,9 @@
                                 <th>Итого за год</th>
                             </tr>
                         </thead>
-                        <tbody></tbody>
+                        <tbody id="annual-report-body">
+                            <!-- Данные загружаются через JS -->
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -310,73 +504,6 @@
                 </div>
                 <div class="chart-container">
                     <canvas id="annual-chart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Страница: Настройки -->
-        <div id="settings-page" class="page">
-            <div class="page-header">
-                <h2><i class="fas fa-cog"></i> Настройки системы</h2>
-            </div>
-
-            <div class="row">
-                <div class="col">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-user"></i> Профиль пользователя</h4>
-                        </div>
-                        <div class="form-section">
-                            <div class="form-group">
-                                <label>Имя пользователя:</label>
-                                <input type="text" class="form-control" id="username-input" value="Сидоров С.С.">
-                            </div>
-                            <div class="form-group">
-                                <label>Отдел:</label>
-                                <select class="form-control" id="user-dept-select">
-                                    <option value="Отдел 1" selected>Отдел 1</option>
-                                    <option value="Отдел 2">Отдел 2</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Роль:</label>
-                                <input type="text" class="form-control" value="Руководитель отдела" readonly>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-database"></i> Управление данными</h4>
-                        </div>
-                        <div class="form-section">
-                            <div class="info-box">
-                                <p><strong>Локальное хранилище:</strong> Все данные сохраняются в вашем браузере.</p>
-                                <p>Используйте экспорт для создания резервной копии.</p>
-                            </div>
-                            <div class="button-group">
-                                <button class="btn btn-warning" id="clear-data-btn">
-                                    <i class="fas fa-trash"></i> Очистить все данные
-                                </button>
-                                <button class="btn btn-danger" id="reset-data-btn">
-                                    <i class="fas fa-redo"></i> Сбросить к начальным данным
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h4><i class="fas fa-info-circle"></i> О программе</h4>
-                </div>
-                <div class="form-section">
-                    <p><strong>ПШЭ Трекер v1.0</strong></p>
-                    <p>Система учета и планирования полных штатных единиц (ПШЭ)</p>
-                    <p>© 2024 Разработано для автоматизации учета рабочего времени</p>
-                    <p><a href="#" id="show-help"><i class="fas fa-question-circle"></i> Показать справку</a></p>
                 </div>
             </div>
         </div>
@@ -393,11 +520,11 @@
                 <form id="employee-form">
                     <div class="form-group">
                         <label>Табельный номер:</label>
-                        <input type="text" class="form-control" id="emp-id" required>
+                        <input type="text" class="form-control" id="emp-id" placeholder="EMP010" required>
                     </div>
                     <div class="form-group">
                         <label>ФИО:</label>
-                        <input type="text" class="form-control" id="emp-name" required>
+                        <input type="text" class="form-control" id="emp-name" placeholder="Иванов Иван Иванович" required>
                     </div>
                     <div class="form-group">
                         <label>Отдел:</label>
@@ -408,21 +535,66 @@
                     </div>
                     <div class="form-group">
                         <label>Должность:</label>
-                        <input type="text" class="form-control" id="emp-position" required>
+                        <input type="text" class="form-control" id="emp-position" placeholder="Специалист" required>
                     </div>
                     <div class="form-group">
                         <label>Дата приема:</label>
-                        <input type="date" class="form-control" id="emp-hire-date" required>
+                        <input type="date" class="form-control" id="emp-hire-date" value="2025-01-01" required>
                     </div>
                     <div class="form-group">
                         <label>Руководитель:</label>
-                        <input type="text" class="form-control" id="emp-manager">
+                        <select class="form-control" id="emp-manager">
+                            <option value="">Не указан</option>
+                            <option value="Петров П.П.">Петров П.П.</option>
+                            <option value="Сидоров С.С.">Сидоров С.С.</option>
+                            <option value="Новиков Н.Н.">Новиков Н.Н.</option>
+                        </select>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary close-modal">Отмена</button>
                 <button class="btn btn-primary" id="save-employee-btn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-absence-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить отсутствие</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="absence-form">
+                    <div class="form-group">
+                        <label>Сотрудник:</label>
+                        <select class="form-control" id="absence-emp-id" required>
+                            <!-- Заполняется через JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Тип отсутствия:</label>
+                        <select class="form-control" id="absence-type" required>
+                            <option value="Отпуск">Отпуск</option>
+                            <option value="Больничный">Больничный</option>
+                            <option value="Командировка">Командировка</option>
+                            <option value="Учебный отпуск">Учебный отпуск</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата начала:</label>
+                        <input type="date" class="form-control" id="absence-start" value="2025-01-01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата завершения:</label>
+                        <input type="date" class="form-control" id="absence-end" value="2025-01-05" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-modal">Отмена</button>
+                <button class="btn btn-primary" id="save-absence-btn">Сохранить</button>
             </div>
         </div>
     </div>
@@ -450,18 +622,23 @@
                     <p><strong>Шаг 4:</strong> Нажмите "Сохранить распределение"</p>
                     <p><strong>Шаг 5:</strong> После заполнения всех месяцев смотрите годовой отчет</p>
                     
-                    <h4>Экспорт данных:</h4>
-                    <p>Используйте кнопку "Экспорт" для сохранения резервной копии данных в JSON-файл</p>
-                    <p>Для восстановления данных используйте "Импорт"</p>
+                    <h4>Ключевые функции:</h4>
+                    <ul>
+                        <li><strong>Копирование из прошлого месяца:</strong> Быстрое заполнение похожего распределения</li>
+                        <li><strong>Автоматическая проверка:</strong> Система проверяет, что сумма распределения = 1.0</li>
+                        <li><strong>Экспорт/импорт:</strong> Сохраняйте резервные копии данных</li>
+                        <li><strong>Годовой отчет:</strong> Анализ нагрузки по БП в течение года</li>
+                    </ul>
+                    
+                    <h4>Формулы расчета:</h4>
+                    <p><strong>Доступно ПШЭ:</strong> (Доступно дней) / (Рабочих дней в месяце)</p>
+                    <p><strong>Факт ПШЭ по БП:</strong> Доля распределения × Доступно ПШЭ</p>
+                    <p><strong>Пример:</strong> Сотрудник доступен 15 из 21 дня (0.71 ПШЭ), распределение на БП1 = 0.6 → Факт ПШЭ = 0.6 × 0.71 = 0.43</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="data.js"></script>
-    <script src="calendar.js"></script>
-    <script src="utils.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
