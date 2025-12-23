@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ПШЭ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Шапка -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <h1>ПШЭ Трекер</h1>
+                <span class="version">v1.0</span>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-page="interface">
+                    <i class="fas fa-tasks"></i> Интерфейс руководителя
+                </button>
+                <button class="nav-btn" data-page="data">
+                    <i class="fas fa-database"></i> База данных
+                </button>
+                <button class="nav-btn" data-page="report">
+                    <i class="fas fa-chart-bar"></i> Годовой отчет
+                </button>
+                <button class="nav-btn" data-page="settings">
+                    <i class="fas fa-cog"></i> Настройки
+                </button>
+            </nav>
+            <div class="user-info">
+                <span class="username" id="current-user">Сидоров С.С. (Отдел 1)</span>
+                <button class="btn btn-small" id="save-btn">
+                    <i class="fas fa-save"></i> Сохранить
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Статус бар -->
+    <div class="status-bar">
+        <div class="container">
+            <span id="status-message">Готов к работе</span>
+            <div class="status-controls">
+                <button class="btn btn-small" id="export-btn">
+                    <i class="fas fa-download"></i> Экспорт
+                </button>
+                <button class="btn btn-small" id="import-btn">
+                    <i class="fas fa-upload"></i> Импорт
+                </button>
+                <input type="file" id="import-file" accept=".json" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <main class="container">
+        <!-- Страница: Интерфейс руководителя -->
+        <div id="interface-page" class="page active">
+            <div class="page-header">
+                <h2><i class="fas fa-tasks"></i> Заполнение ПШЭ за 2025 год</h2>
+                <div class="controls">
+                    <div class="select-group">
+                        <label for="department-select">Отдел:</label>
+                        <select id="department-select" class="form-select">
+                            <option value="Отдел 1">Отдел 1</option>
+                            <option value="Отдел 2">Отдел 2</option>
+                        </select>
+                    </div>
+                    <div class="select-group">
+                        <label for="month-select">Месяц:</label>
+                        <select id="month-select" class="form-select"></select>
+                    </div>
+                    <button class="btn btn-primary" id="load-month-btn">
+                        <i class="fas fa-sync"></i> Загрузить месяц
+                    </button>
+                    <button class="btn btn-secondary" id="copy-prev-btn">
+                        <i class="fas fa-copy"></i> Копировать из прошлого месяца
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Распределение ПШЭ сотрудников по бизнес-процессам</h3>
+                    <div class="info-badge">
+                        <i class="fas fa-info-circle"></i> Сумма по каждому сотруднику должна быть 1.0 (100%)
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table" id="distribution-table">
+                        <thead>
+                            <tr>
+                                <th>№</th>
+                                <th>Сотрудник</th>
+                                <th>Табельный номер</th>
+                                <th>Статус</th>
+                                <th>Отпуск/больничный</th>
+                                <th>Рабочих дней в месяце</th>
+                                <th>Доступно дней</th>
+                                <th id="bp1-header">BP01</th>
+                                <th id="bp2-header">BP02</th>
+                                <th id="bp3-header">BP03</th>
+                                <th>Сумма</th>
+                                <th>Проверка</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="distribution-body">
+                            <!-- Данные загружаются через JS -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="7"><strong>ИТОГО по отделу:</strong></td>
+                                <td id="total-bp1">0.0</td>
+                                <td id="total-bp2">0.0</td>
+                                <td id="total-bp3">0.0</td>
+                                <td id="total-sum">0.0</td>
+                                <td colspan="2">
+                                    <div class="validation-status" id="validation-status">
+                                        <i class="fas fa-check-circle valid"></i> Все проверки пройдены
+                                    </div>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="card-footer">
+                    <button class="btn btn-success" id="save-distribution-btn">
+                        <i class="fas fa-check"></i> Сохранить распределение
+                    </button>
+                    <div class="formula-info">
+                        <strong>Формула расчета:</strong> Факт ПШЭ = Доля × (Доступно дней / Рабочих дней в месяце)
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-calendar-alt"></i> Производственный календарь</h4>
+                        </div>
+                        <div class="table-container">
+                            <table class="compact-table" id="calendar-table">
+                                <thead>
+                                    <tr>
+                                        <th>Месяц</th>
+                                        <th>Рабочих дней</th>
+                                        <th>Выходных</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-exclamation-triangle"></i> Отсутствия в выбранном месяце</h4>
+                        </div>
+                        <div class="table-container">
+                            <table class="compact-table" id="absences-table">
+                                <thead>
+                                    <tr>
+                                        <th>Сотрудник</th>
+                                        <th>Период</th>
+                                        <th>Тип</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Страница: База данных -->
+        <div id="data-page" class="page">
+            <div class="page-header">
+                <h2><i class="fas fa-database"></i> Управление данными</h2>
+                <div class="tabs" id="data-tabs">
+                    <button class="tab-btn active" data-tab="employees">Сотрудники</button>
+                    <button class="tab-btn" data-tab="absences">Отпуска и больничные</button>
+                    <button class="tab-btn" data-tab="bps">Бизнес-процессы</button>
+                    <button class="tab-btn" data-tab="departments">Отделы и БП</button>
+                    <button class="tab-btn" data-tab="pshe-data">Данные ПШЭ</button>
+                </div>
+            </div>
+
+            <div class="tab-content active" id="employees-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Сотрудники</h3>
+                        <button class="btn btn-primary" id="add-employee-btn">
+                            <i class="fas fa-plus"></i> Добавить сотрудника
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="employees-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>ФИО</th>
+                                    <th>Отдел</th>
+                                    <th>Должность</th>
+                                    <th>Дата приема</th>
+                                    <th>Дата увольнения</th>
+                                    <th>Статус</th>
+                                    <th>Руководитель</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="absences-tab">
+                <!-- Таблица отпусков -->
+            </div>
+
+            <div class="tab-content" id="bps-tab">
+                <!-- Таблица БП -->
+            </div>
+
+            <div class="tab-content" id="departments-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Привязка бизнес-процессов к отделам</h3>
+                        <div class="info-badge">
+                            <i class="fas fa-info-circle"></i> Выберите БП, которые ведет ваш отдел
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <div class="select-group">
+                            <label for="dept-bp-select">Отдел:</label>
+                            <select id="dept-bp-select" class="form-select">
+                                <option value="Отдел 1">Отдел 1</option>
+                                <option value="Отдел 2">Отдел 2</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="bp-selection">
+                        <div class="bp-list" id="bp-list">
+                            <!-- БП загружаются через JS -->
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-success" id="save-dept-bp-btn">
+                            <i class="fas fa-save"></i> Сохранить привязку
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="pshe-data-tab">
+                <!-- Таблица данных ПШЭ -->
+            </div>
+        </div>
+
+        <!-- Страница: Годовой отчет -->
+        <div id="report-page" class="page">
+            <div class="page-header">
+                <h2><i class="fas fa-chart-bar"></i> Годовой отчет по ПШЭ за 2025 год</h2>
+                <div class="controls">
+                    <div class="select-group">
+                        <label for="report-dept-select">Отдел:</label>
+                        <select id="report-dept-select" class="form-select">
+                            <option value="Отдел 1">Отдел 1</option>
+                            <option value="Отдел 2">Отдел 2</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="generate-report-btn">
+                        <i class="fas fa-chart-line"></i> Сгенерировать отчет
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Сводка по бизнес-процессам</h3>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="annual-report-table">
+                        <thead>
+                            <tr>
+                                <th>Бизнес-процесс</th>
+                                <th>Янв</th><th>Фев</th><th>Мар</th><th>Апр</th>
+                                <th>Май</th><th>Июн</th><th>Июл</th><th>Авг</th>
+                                <th>Сен</th><th>Окт</th><th>Ноя</th><th>Дек</th>
+                                <th>Итого за год</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>График нагрузки по БП</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="annual-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Страница: Настройки -->
+        <div id="settings-page" class="page">
+            <div class="page-header">
+                <h2><i class="fas fa-cog"></i> Настройки системы</h2>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-user"></i> Профиль пользователя</h4>
+                        </div>
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label>Имя пользователя:</label>
+                                <input type="text" class="form-control" id="username-input" value="Сидоров С.С.">
+                            </div>
+                            <div class="form-group">
+                                <label>Отдел:</label>
+                                <select class="form-control" id="user-dept-select">
+                                    <option value="Отдел 1" selected>Отдел 1</option>
+                                    <option value="Отдел 2">Отдел 2</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Роль:</label>
+                                <input type="text" class="form-control" value="Руководитель отдела" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-database"></i> Управление данными</h4>
+                        </div>
+                        <div class="form-section">
+                            <div class="info-box">
+                                <p><strong>Локальное хранилище:</strong> Все данные сохраняются в вашем браузере.</p>
+                                <p>Используйте экспорт для создания резервной копии.</p>
+                            </div>
+                            <div class="button-group">
+                                <button class="btn btn-warning" id="clear-data-btn">
+                                    <i class="fas fa-trash"></i> Очистить все данные
+                                </button>
+                                <button class="btn btn-danger" id="reset-data-btn">
+                                    <i class="fas fa-redo"></i> Сбросить к начальным данным
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-info-circle"></i> О программе</h4>
+                </div>
+                <div class="form-section">
+                    <p><strong>ПШЭ Трекер v1.0</strong></p>
+                    <p>Система учета и планирования полных штатных единиц (ПШЭ)</p>
+                    <p>© 2024 Разработано для автоматизации учета рабочего времени</p>
+                    <p><a href="#" id="show-help"><i class="fas fa-question-circle"></i> Показать справку</a></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Модальные окна -->
+    <div id="add-employee-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить нового сотрудника</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="employee-form">
+                    <div class="form-group">
+                        <label>Табельный номер:</label>
+                        <input type="text" class="form-control" id="emp-id" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ФИО:</label>
+                        <input type="text" class="form-control" id="emp-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Отдел:</label>
+                        <select class="form-control" id="emp-dept" required>
+                            <option value="Отдел 1">Отдел 1</option>
+                            <option value="Отдел 2">Отдел 2</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Должность:</label>
+                        <input type="text" class="form-control" id="emp-position" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата приема:</label>
+                        <input type="date" class="form-control" id="emp-hire-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Руководитель:</label>
+                        <input type="text" class="form-control" id="emp-manager">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-modal">Отмена</button>
+                <button class="btn btn-primary" id="save-employee-btn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h3>Справка по использованию ПШЭ Трекера</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="help-content">
+                    <h4>Основные принципы:</h4>
+                    <ol>
+                        <li>Каждый сотрудник имеет 1.0 ПШЭ (100% рабочего времени)</li>
+                        <li>ПШЭ распределяется между бизнес-процессами (БП), которые ведет отдел</li>
+                        <li>Сумма по всем БП для одного сотрудника = 1.0</li>
+                        <li>Учитывайте отпуска и больничные при расчете доступных дней</li>
+                    </ol>
+                    
+                    <h4>Как работать с системой:</h4>
+                    <p><strong>Шаг 1:</strong> На странице "База данных" → "Отделы и БП" выберите БП для вашего отдела</p>
+                    <p><strong>Шаг 2:</strong> На главной странице выберите отдел и месяц для заполнения</p>
+                    <p><strong>Шаг 3:</strong> Для каждого сотрудника укажите доступные дни и распределите по БП</p>
+                    <p><strong>Шаг 4:</strong> Нажмите "Сохранить распределение"</p>
+                    <p><strong>Шаг 5:</strong> После заполнения всех месяцев смотрите годовой отчет</p>
+                    
+                    <h4>Экспорт данных:</h4>
+                    <p>Используйте кнопку "Экспорт" для сохранения резервной копии данных в JSON-файл</p>
+                    <p>Для восстановления данных используйте "Импорт"</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="data.js"></script>
+    <script src="calendar.js"></script>
+    <script src="utils.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
