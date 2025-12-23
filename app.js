@@ -1,45 +1,200 @@
-// Основное приложение ПШЭ Трекер
+// ПШЭ Трекер - Основное приложение
 class PsheTracker {
     constructor() {
+        this.data = {
+            employees: [],
+            absences: [],
+            departmentsBP: {},
+            psheData: [],
+            businessProcesses: [
+                { id: 'BP01', name: 'Анализ отчетности' },
+                { id: 'BP02', name: 'Проведение проверок' },
+                { id: 'BP03', name: 'Мониторинг рисков' },
+                { id: 'BP05', name: 'Выездные проверки' },
+                { id: 'BP06', name: 'Консультирование банков' }
+            ]
+        };
+        
+        this.currentUser = {
+            name: 'Сидоров С.С.',
+            department: 'Отдел 1',
+            role: 'Руководитель отдела'
+        };
+        
         this.init();
     }
-
+    
     async init() {
         console.log('Инициализация ПШЭ Трекера...');
         
-        // Инициализация данных
-        await this.loadData();
+        // Загрузка данных из LocalStorage
+        this.loadAllData();
+        
+        // Если данных нет, загружаем начальные
+        if (this.data.employees.length === 0) {
+            this.loadInitialData();
+        }
         
         // Инициализация интерфейса
         this.initNavigation();
-        this.initCalendar();
-        this.initDistributionTable();
         this.initEventListeners();
         this.initTabs();
         
-        // Загрузка начальных данных
-        this.loadInitialData();
+        // Загрузка начального месяца
+        setTimeout(() => {
+            this.loadMonthData();
+            this.updateEmployeesTable();
+            this.updateAbsencesTable();
+            this.updatePSHEDataTable();
+            this.updateBPList();
+            this.updateStorageSize();
+        }, 100);
         
         console.log('ПШЭ Трекер готов к работе');
         this.showStatus('Система загружена. Готов к работе.');
     }
-
-    async loadData() {
-        // Загрузка данных из LocalStorage или использование начальных данных
-        this.employees = this.loadFromStorage('employees') || initialData.employees;
-        this.absences = this.loadFromStorage('absences') || initialData.absences;
-        this.businessProcesses = this.loadFromStorage('businessProcesses') || initialData.businessProcesses;
-        this.departmentsBP = this.loadFromStorage('departmentsBP') || initialData.departmentsBP;
-        this.psheData = this.loadFromStorage('psheData') || [];
+    
+    // ==================== ДАННЫЕ ====================
+    
+    loadInitialData() {
+        // Начальные данные сотрудников
+        this.data.employees = [
+            { 
+                id: 'EMP001', 
+                name: 'Иванов Иван Иванович', 
+                department: 'Отдел 1', 
+                position: 'Главный специалист',
+                hireDate: '2020-03-01',
+                dismissalDate: '',
+                status: 'Активен',
+                manager: 'Петров П.П.'
+            },
+            { 
+                id: 'EMP002', 
+                name: 'Петров Петр Петрович', 
+                department: 'Отдел 1', 
+                position: 'Начальник отдела',
+                hireDate: '2018-06-15',
+                dismissalDate: '',
+                status: 'Активен',
+                manager: 'Сидоров С.С.'
+            },
+            { 
+                id: 'EMP003', 
+                name: 'Сидорова Мария Константиновна', 
+                department: 'Отдел 1', 
+                position: 'Ведущий специалист',
+                hireDate: '2021-01-10',
+                dismissalDate: '',
+                status: 'Активен',
+                manager: 'Петров П.П.'
+            },
+            { 
+                id: 'EMP004', 
+                name: 'Козлов Дмитрий Владимирович', 
+                department: 'Отдел 1', 
+                position: 'Главный специалист',
+                hireDate: '2019-09-05',
+                dismissalDate: '2025-06-30',
+                status: 'Уволен',
+                manager: 'Петров П.П.'
+            },
+            { 
+                id: 'EMP005', 
+                name: 'Новиков Николай Николаевич', 
+                department: 'Отдел 2', 
+                position: 'Начальник отдела',
+                hireDate: '2017-04-20',
+                dismissalDate: '',
+                status: 'Активен',
+                manager: 'Сидоров С.С.'
+            },
+            { 
+                id: 'EMP006', 
+                name: 'Смирнов Алексей Алексеевич', 
+                department: 'Отдел 2', 
+                position: 'Ведущий специалист',
+                hireDate: '2020-11-12',
+                dismissalDate: '',
+                status: 'Активен',
+                manager: 'Новиков Н.Н.'
+            },
+            { 
+                id: 'EMP007', 
+                name: 'Орлова Ольга Олеговна', 
+                department: 'Отдел 2', 
+                position: 'Главный специалист',
+                hireDate: '2019-02-03',
+                dismissalDate: '',
+                status: 'Активен',
+                manager: 'Новиков Н.Н.'
+            },
+            { 
+                id: 'EMP008', 
+                name: 'Кириллов Кирилл Кириллович', 
+                department: 'Отдел 2', 
+                position: 'Ведущий специалист',
+                hireDate: '2018-08-08',
+                dismissalDate: '',
+                status: 'Активен',
+                manager: 'Новиков Н.Н.'
+            },
+            { 
+                id: 'EMP009', 
+                name: 'Федорова Фаина Федоровна', 
+                department: 'Отдел 2', 
+                position: 'Специалист',
+                hireDate: '2025-03-15',
+                dismissalDate: '',
+                status: 'Активен',
+                manager: 'Новиков Н.Н.'
+            }
+        ];
         
-        // Сохранение в LocalStorage, если данных не было
-        this.saveToStorage('employees', this.employees);
-        this.saveToStorage('absences', this.absences);
-        this.saveToStorage('businessProcesses', this.businessProcesses);
-        this.saveToStorage('departmentsBP', this.departmentsBP);
-        this.saveToStorage('psheData', this.psheData);
+        // Начальные данные отсутствий
+        this.data.absences = [
+            { id: 'ABS001', employeeId: 'EMP001', startDate: '2025-01-20', endDate: '2025-01-31', type: 'Отпуск' },
+            { id: 'ABS002', employeeId: 'EMP001', startDate: '2025-07-15', endDate: '2025-07-31', type: 'Отпуск' },
+            { id: 'ABS003', employeeId: 'EMP002', startDate: '2025-02-10', endDate: '2025-02-28', type: 'Больничный' },
+            { id: 'ABS004', employeeId: 'EMP002', startDate: '2025-08-01', endDate: '2025-08-31', type: 'Отпуск' },
+            { id: 'ABS005', employeeId: 'EMP003', startDate: '2025-05-15', endDate: '2025-05-31', type: 'Отпуск' },
+            { id: 'ABS006', employeeId: 'EMP003', startDate: '2025-11-15', endDate: '2025-11-30', type: 'Отпуск' },
+            { id: 'ABS007', employeeId: 'EMP004', startDate: '2025-04-10', endDate: '2025-04-20', type: 'Больничный' },
+            { id: 'ABS008', employeeId: 'EMP005', startDate: '2025-06-01', endDate: '2025-06-30', type: 'Отпуск' },
+            { id: 'ABS009', employeeId: 'EMP006', startDate: '2025-03-10', endDate: '2025-03-20', type: 'Больничный' },
+            { id: 'ABS010', employeeId: 'EMP006', startDate: '2025-09-01', endDate: '2025-09-30', type: 'Отпуск' },
+            { id: 'ABS011', employeeId: 'EMP007', startDate: '2025-07-15', endDate: '2025-07-31', type: 'Отпуск' },
+            { id: 'ABS012', employeeId: 'EMP008', startDate: '2025-04-20', endDate: '2025-04-30', type: 'Отпуск' },
+            { id: 'ABS013', employeeId: 'EMP008', startDate: '2025-12-10', endDate: '2025-12-20', type: 'Больничный' },
+            { id: 'ABS014', employeeId: 'EMP009', startDate: '2025-10-01', endDate: '2025-10-15', type: 'Отпуск' }
+        ];
+        
+        // Начальные привязки отделов к БП
+        this.data.departmentsBP = {
+            'Отдел 1': ['BP01', 'BP02', 'BP03'],
+            'Отдел 2': ['BP01', 'BP05', 'BP06']
+        };
+        
+        this.saveAllData();
     }
-
+    
+    saveAllData() {
+        localStorage.setItem('pshe_employees', JSON.stringify(this.data.employees));
+        localStorage.setItem('pshe_absences', JSON.stringify(this.data.absences));
+        localStorage.setItem('pshe_departmentsBP', JSON.stringify(this.data.departmentsBP));
+        localStorage.setItem('pshe_psheData', JSON.stringify(this.data.psheData));
+        this.updateStorageSize();
+    }
+    
+    loadAllData() {
+        this.data.employees = JSON.parse(localStorage.getItem('pshe_employees') || '[]');
+        this.data.absences = JSON.parse(localStorage.getItem('pshe_absences') || '[]');
+        this.data.departmentsBP = JSON.parse(localStorage.getItem('pshe_departmentsBP') || '{}');
+        this.data.psheData = JSON.parse(localStorage.getItem('pshe_psheData') || '[]');
+    }
+    
+    // ==================== ИНТЕРФЕЙС ====================
+    
     initNavigation() {
         const navButtons = document.querySelectorAll('.nav-btn');
         const pages = document.querySelectorAll('.page');
@@ -64,62 +219,7 @@ class PsheTracker {
             });
         });
     }
-
-    initCalendar() {
-        const monthSelect = document.getElementById('month-select');
-        const calendarTable = document.getElementById('calendar-table');
-        
-        // Заполняем выпадающий список месяцев
-        productionCalendar.months.forEach(month => {
-            const option = document.createElement('option');
-            option.value = month.number;
-            option.textContent = `${month.name} 2025 (${month.workingDays} раб. дн.)`;
-            monthSelect.appendChild(option);
-        });
-        
-        // Заполняем таблицу календаря
-        const tbody = calendarTable.querySelector('tbody');
-        productionCalendar.months.forEach(month => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${month.name}</td>
-                <td>${month.workingDays}</td>
-                <td>${month.totalDays - month.workingDays}</td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-
-    initDistributionTable() {
-        // Инициализация таблицы распределения
-        const table = document.getElementById('distribution-table');
-        
-        // Устанавливаем заголовки БП из данных
-        const bpHeaders = document.querySelectorAll('[id^="bp-header"]');
-        const selectedDeptBP = this.departmentsBP['Отдел 1'] || [];
-        
-        selectedDeptBP.forEach((bp, index) => {
-            if (bpHeaders[index]) {
-                bpHeaders[index].textContent = bp;
-                bpHeaders[index].dataset.bpId = bp;
-            }
-        });
-        
-        // Показываем/скрываем столбцы в зависимости от количества БП
-        for (let i = 0; i < 5; i++) {
-            const header = document.getElementById(`bp${i+1}-header`);
-            const colIndex = 7 + i; // 7 - индекс первого столбца БП
-            if (header) {
-                if (i < selectedDeptBP.length) {
-                    header.style.display = '';
-                    // Скрываем/показываем соответствующие ячейки в теле таблицы
-                } else {
-                    header.style.display = 'none';
-                }
-            }
-        }
-    }
-
+    
     initEventListeners() {
         // Кнопка загрузки месяца
         document.getElementById('load-month-btn').addEventListener('click', () => {
@@ -136,50 +236,130 @@ class PsheTracker {
             this.copyFromPreviousMonth();
         });
         
-        // Кнопки экспорта/импорта
-        document.getElementById('export-btn').addEventListener('click', () => {
-            this.exportData();
-        });
-        
-        document.getElementById('import-btn').addEventListener('click', () => {
-            document.getElementById('import-file').click();
-        });
-        
-        document.getElementById('import-file').addEventListener('change', (e) => {
-            this.importData(e.target.files[0]);
-        });
-        
-        // Сохранение привязки БП
+        // Кнопка сохранения привязки БП
         document.getElementById('save-dept-bp-btn').addEventListener('click', () => {
             this.saveDepartmentBP();
         });
         
-        // Генерация отчета
+        // Кнопка добавления сотрудника
+        document.getElementById('add-employee-btn').addEventListener('click', () => {
+            this.showAddEmployeeModal();
+        });
+        
+        // Кнопка сохранения сотрудника
+        document.getElementById('save-employee-btn').addEventListener('click', () => {
+            this.saveEmployee();
+        });
+        
+        // Кнопка добавления отсутствия
+        document.getElementById('add-absence-btn').addEventListener('click', () => {
+            this.showAddAbsenceModal();
+        });
+        
+        // Кнопка сохранения отсутствия
+        document.getElementById('save-absence-btn').addEventListener('click', () => {
+            this.saveAbsence();
+        });
+        
+        // Кнопка очистки данных ПШЭ
+        document.getElementById('clear-pshe-btn').addEventListener('click', () => {
+            if (confirm('Вы уверены? Все данные ПШЭ будут удалены.')) {
+                this.data.psheData = [];
+                this.saveAllData();
+                this.updatePSHEDataTable();
+                this.showStatus('Данные ПШЭ очищены');
+            }
+        });
+        
+        // Кнопка экспорта
+        document.getElementById('export-json-btn').addEventListener('click', () => {
+            this.exportData('json');
+        });
+        
+        document.getElementById('export-csv-btn').addEventListener('click', () => {
+            this.exportData('csv');
+        });
+        
+        // Кнопка импорта
+        document.getElementById('import-btn').addEventListener('click', () => {
+            this.importData();
+        });
+        
+        // Кнопка очистки хранилища
+        document.getElementById('clear-storage-btn').addEventListener('click', () => {
+            if (confirm('Вы уверены? Все данные в локальном хранилище будут удалены.')) {
+                localStorage.clear();
+                this.loadInitialData();
+                this.loadMonthData();
+                this.updateEmployeesTable();
+                this.updateAbsencesTable();
+                this.updatePSHEDataTable();
+                this.showStatus('Локальное хранилище очищено');
+            }
+        });
+        
+        // Кнопка сброса данных
+        document.getElementById('reset-all-btn').addEventListener('click', () => {
+            if (confirm('Вы уверены? Все данные будут сброшены к начальным значениям.')) {
+                localStorage.clear();
+                this.loadInitialData();
+                this.loadMonthData();
+                this.updateEmployeesTable();
+                this.updateAbsencesTable();
+                this.updatePSHEDataTable();
+                this.showStatus('Данные сброшены к начальным значениям');
+            }
+        });
+        
+        // Кнопка генерации отчета
         document.getElementById('generate-report-btn').addEventListener('click', () => {
             this.generateAnnualReport();
         });
         
-        // Очистка данных
-        document.getElementById('clear-data-btn').addEventListener('click', () => {
-            if (confirm('Вы уверены? Все данные будут удалены.')) {
-                this.clearAllData();
-            }
+        // Кнопка печати отчета
+        document.getElementById('print-report-btn').addEventListener('click', () => {
+            window.print();
         });
         
-        // Сброс к начальным данным
-        document.getElementById('reset-data-btn').addEventListener('click', () => {
-            if (confirm('Вы уверены? Все данные будут сброшены к начальным значениям.')) {
-                this.resetToInitialData();
-            }
-        });
-        
-        // Показать справку
-        document.getElementById('show-help').addEventListener('click', (e) => {
-            e.preventDefault();
+        // Кнопка справки
+        document.getElementById('help-btn').addEventListener('click', () => {
             this.showHelp();
         });
+        
+        // Кнопка сохранения всех данных
+        document.getElementById('save-all-btn').addEventListener('click', () => {
+            this.saveAllData();
+            this.showStatus('Все данные сохранены');
+        });
+        
+        // Закрытие модальных окон
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.closeModals();
+            });
+        });
+        
+        // При изменении отдела в интерфейсе руководителя
+        document.getElementById('department-select').addEventListener('change', () => {
+            this.loadMonthData();
+        });
+        
+        // При изменении месяца в интерфейсе руководителя
+        document.getElementById('month-select').addEventListener('change', () => {
+            this.loadMonthData();
+        });
+        
+        // При изменении отдела в настройках БП
+        document.getElementById('dept-bp-select').addEventListener('change', () => {
+            this.updateBPList();
+        });
+        
+        // При изменении отдела в отчете
+        document.getElementById('report-dept-select').addEventListener('change', () => {
+            this.generateAnnualReport();
+        });
     }
-
+    
     initTabs() {
         const tabBtns = document.querySelectorAll('.tab-btn');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -201,22 +381,39 @@ class PsheTracker {
             });
         });
     }
-
+    
+    updatePageContent(pageId) {
+        switch(pageId) {
+            case 'data':
+                this.updateEmployeesTable();
+                this.updateAbsencesTable();
+                this.updatePSHEDataTable();
+                this.updateBPList();
+                this.updateStorageSize();
+                break;
+            case 'report':
+                this.generateAnnualReport();
+                break;
+        }
+    }
+    
+    // ==================== ИНТЕРФЕЙС РУКОВОДИТЕЛЯ ====================
+    
     loadMonthData() {
         const department = document.getElementById('department-select').value;
         const monthSelect = document.getElementById('month-select');
         const monthNumber = monthSelect.value;
-        const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+        const monthText = monthSelect.options[monthSelect.selectedIndex].text;
         
-        this.showStatus(`Загрузка данных: ${department}, ${monthName}`);
+        this.showStatus(`Загрузка данных: ${department}, ${monthText}`);
         
         // Получаем сотрудников отдела
-        const departmentEmployees = this.employees.filter(emp => 
-            emp.отдел === department && emp.статус === 'Активен'
+        const departmentEmployees = this.data.employees.filter(emp => 
+            emp.department === department && emp.status === 'Активен'
         );
         
         // Получаем БП для отдела
-        const departmentBP = this.departmentsBP[department] || [];
+        const departmentBP = this.data.departmentsBP[department] || [];
         
         // Обновляем заголовки БП в таблице
         this.updateBPHeaders(departmentBP);
@@ -227,44 +424,49 @@ class PsheTracker {
         // Показываем отсутствия в этом месяце
         this.showMonthAbsences(monthNumber);
     }
-
+    
     updateBPHeaders(bpList) {
         // Обновляем заголовки столбцов БП
-        for (let i = 1; i <= 5; i++) {
+        for (let i = 1; i <= 3; i++) {
             const header = document.getElementById(`bp${i}-header`);
             const totalCell = document.getElementById(`total-bp${i}`);
             
             if (i <= bpList.length) {
                 const bpId = bpList[i-1];
-                const bp = this.businessProcesses.find(b => b.id === bpId);
+                const bp = this.data.businessProcesses.find(b => b.id === bpId);
                 header.textContent = bpId;
                 header.title = bp ? bp.name : '';
-                header.style.display = '';
-                if (totalCell) totalCell.style.display = '';
+                header.style.display = 'table-cell';
+                if (totalCell) totalCell.style.display = 'table-cell';
             } else {
                 header.style.display = 'none';
                 if (totalCell) totalCell.style.display = 'none';
             }
         }
     }
-
+    
     fillDistributionTable(employees, department, monthNumber, bpList) {
         const tbody = document.getElementById('distribution-body');
         tbody.innerHTML = '';
         
-        // Получаем производственный календарь для месяца
-        const monthData = productionCalendar.months.find(m => m.number === monthNumber);
-        const workingDays = monthData ? monthData.workingDays : 21;
+        if (employees.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 20px;">Нет активных сотрудников в отделе</td></tr>`;
+            this.updateTotals();
+            return;
+        }
+        
+        // Получаем рабочие дни для месяца
+        const workingDays = this.getWorkingDaysForMonth(monthNumber);
         
         employees.forEach((emp, index) => {
             const row = document.createElement('tr');
             
             // Получаем отсутствия сотрудника в этом месяце
             const empAbsences = this.getEmployeeAbsences(emp.id, monthNumber);
-            const availableDays = this.calculateAvailableDays(emp, monthNumber, workingDays);
+            const availableDays = this.calculateAvailableDays(emp, monthNumber, workingDays, empAbsences);
             
             // Получаем сохраненное распределение
-            const savedDistribution = this.getSavedDistribution(emp.id, department, monthNumber);
+            const savedDistribution = this.getSavedDistribution(emp.id, department, monthNumber, bpList);
             
             // Создаем ячейки для каждого БП
             let bpCells = '';
@@ -280,7 +482,7 @@ class PsheTracker {
                                class="distribution-input" 
                                data-emp="${emp.id}" 
                                data-bp="${bpId}"
-                               value="${savedValue}"
+                               value="${savedValue.toFixed(2)}"
                                min="0" 
                                max="1" 
                                step="0.05"
@@ -289,13 +491,18 @@ class PsheTracker {
                 `;
             });
             
+            // Если БП меньше 3, добавляем пустые ячейки
+            for (let i = bpList.length; i < 3; i++) {
+                bpCells += '<td style="display: none;"></td>';
+            }
+            
             row.innerHTML = `
                 <td>${index + 1}</td>
-                <td>${emp.имя}</td>
+                <td>${emp.name}</td>
                 <td>${emp.id}</td>
                 <td>
-                    <span class="status-badge ${emp.статус === 'Активен' ? 'active' : 'inactive'}">
-                        ${emp.статус}
+                    <span class="status-badge ${emp.status === 'Активен' ? 'active' : 'inactive'}">
+                        ${emp.status}
                     </span>
                 </td>
                 <td>${empAbsences.length > 0 ? empAbsences.map(a => `${a.type} ${a.days} дн.`).join(', ') : 'Нет'}</td>
@@ -308,7 +515,8 @@ class PsheTracker {
                            value="${availableDays}"
                            min="0" 
                            max="${workingDays}"
-                           step="1">
+                           step="1"
+                           onchange="psheTracker.updateTotals()">
                 </td>
                 ${bpCells}
                 <td id="sum-${emp.id}">${bpSum.toFixed(2)}</td>
@@ -328,96 +536,107 @@ class PsheTracker {
         // Обновляем итоги
         this.updateTotals();
     }
-
+    
+    getWorkingDaysForMonth(monthNumber) {
+        const workingDaysMap = {
+            '01': 17, '02': 19, '03': 20, '04': 22, '05': 18, '06': 21,
+            '07': 23, '08': 21, '09': 22, '10': 23, '11': 18, '12': 22
+        };
+        return workingDaysMap[monthNumber] || 21;
+    }
+    
     getEmployeeAbsences(employeeId, monthNumber) {
-        return this.absences.filter(abs => {
-            if (abs.сотрудникId !== employeeId) return false;
+        const month = parseInt(monthNumber);
+        return this.data.absences.filter(abs => {
+            if (abs.employeeId !== employeeId) return false;
             
-            const startDate = new Date(abs.начало);
-            const endDate = new Date(abs.конец);
-            const targetMonth = parseInt(monthNumber);
+            const startDate = new Date(abs.startDate);
+            const endDate = new Date(abs.endDate);
             
-            return (startDate.getMonth() + 1 === targetMonth || 
-                   endDate.getMonth() + 1 === targetMonth ||
-                   (startDate.getMonth() + 1 < targetMonth && endDate.getMonth() + 1 > targetMonth));
+            // Проверяем, пересекается ли отсутствие с месяцем
+            const startMonth = startDate.getMonth() + 1;
+            const endMonth = endDate.getMonth() + 1;
+            
+            return (startMonth === month || endMonth === month || 
+                   (startMonth < month && endMonth > month));
+        }).map(abs => {
+            const startDate = new Date(abs.startDate);
+            const endDate = new Date(abs.endDate);
+            const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            return { ...abs, days };
         });
     }
-
-    calculateAvailableDays(employee, monthNumber, totalWorkingDays) {
+    
+    calculateAvailableDays(employee, monthNumber, totalWorkingDays, absences) {
         // Проверяем, уволен ли сотрудник до этого месяца
-        if (employee.увольнение) {
-            const fireDate = new Date(employee.увольнение);
-            const fireMonth = fireDate.getMonth() + 1;
-            if (fireMonth < parseInt(monthNumber)) {
+        if (employee.dismissalDate) {
+            const dismissalDate = new Date(employee.dismissalDate);
+            const dismissalMonth = dismissalDate.getMonth() + 1;
+            if (dismissalMonth < parseInt(monthNumber)) {
                 return 0;
             }
         }
         
         // Проверяем, принят ли сотрудник после начала месяца
-        if (employee.прием) {
-            const hireDate = new Date(employee.прием);
+        if (employee.hireDate) {
+            const hireDate = new Date(employee.hireDate);
             const hireMonth = hireDate.getMonth() + 1;
             if (hireMonth > parseInt(monthNumber)) {
                 return 0;
             } else if (hireMonth === parseInt(monthNumber)) {
-                // Рассчитываем дни с даты приема
-                const monthStart = new Date(2025, parseInt(monthNumber) - 1, 1);
+                // Упрощенный расчет: считаем, что сотрудник работает с даты приема
                 const daysInMonth = new Date(2025, parseInt(monthNumber), 0).getDate();
                 const daysFromHire = daysInMonth - hireDate.getDate() + 1;
-                
-                // Нужна более сложная логика с учетом рабочих дней
                 return Math.min(totalWorkingDays, Math.round(daysFromHire * totalWorkingDays / daysInMonth));
             }
         }
         
-        // Учитываем отпуска и больничные
-        const absences = this.getEmployeeAbsences(employee.id, monthNumber);
-        let absentDays = 0;
+        // Учитываем отсутствия
+        if (absences.length === 0) {
+            return totalWorkingDays;
+        }
         
+        // Упрощенный расчет: вычитаем дни отсутствия
+        let absentDays = 0;
         absences.forEach(abs => {
-            const start = new Date(abs.начало);
-            const end = new Date(abs.конец);
-            const monthStart = new Date(2025, parseInt(monthNumber) - 1, 1);
-            const monthEnd = new Date(2025, parseInt(monthNumber), 0);
-            
-            // Рассчитываем пересечение периода отсутствия с месяцем
-            const absenceStart = start < monthStart ? monthStart : start;
-            const absenceEnd = end > monthEnd ? monthEnd : end;
-            
-            // Упрощенный расчет - считаем все дни отсутствия
-            const daysDiff = Math.ceil((absenceEnd - absenceStart) / (1000 * 60 * 60 * 24)) + 1;
-            absentDays += daysDiff;
+            absentDays += abs.days;
         });
         
-        // Упрощенный расчет - вычитаем дни отсутствия
-        // В реальной системе нужно учитывать только рабочие дни
-        return Math.max(0, totalWorkingDays - Math.round(absentDays * totalWorkingDays / 30));
+        // Упрощенная логика: считаем, что 30 дней в месяце
+        const absentWorkingDays = Math.round(absentDays * totalWorkingDays / 30);
+        return Math.max(0, totalWorkingDays - absentWorkingDays);
     }
-
-    getSavedDistribution(employeeId, department, monthNumber) {
-        // Ищем сохраненные данные
-        const saved = this.psheData.find(data => 
-            data.сотрудникId === employeeId && 
-            data.отдел === department && 
-            data.месяц === monthNumber
+    
+    getSavedDistribution(employeeId, department, monthNumber, bpList) {
+        const saved = this.data.psheData.find(data => 
+            data.employeeId === employeeId && 
+            data.department === department && 
+            data.month === monthNumber
         );
         
-        return saved ? saved.распределение : {};
+        if (!saved) {
+            // Равномерное распределение по умолчанию
+            const defaultDistribution = {};
+            const equalShare = 1 / bpList.length;
+            bpList.forEach(bp => {
+                defaultDistribution[bp] = parseFloat(equalShare.toFixed(2));
+            });
+            return defaultDistribution;
+        }
+        
+        return saved.distribution;
     }
-
+    
     updateDistributionSum(input) {
         const empId = input.dataset.emp;
-        const bpId = input.dataset.bp;
         const value = parseFloat(input.value) || 0;
         
         // Находим все инпуты для этого сотрудника
-        const empInputs = document.querySelectorAll(`.distribution-input[data-emp="${empId}"]`);
+        const empInputs = document.querySelectorAll(`.distribution-input[data-emp="${empId}"][data-bp]`);
         let sum = 0;
         
         empInputs.forEach(inp => {
-            if (inp.dataset.bp) {
-                sum += parseFloat(inp.value) || 0;
-            }
+            sum += parseFloat(inp.value) || 0;
         });
         
         // Обновляем сумму
@@ -432,18 +651,20 @@ class PsheTracker {
         if (isValid) {
             checkCell.innerHTML = '<i class="fas fa-check-circle valid"></i>';
         } else {
-            checkCell.innerHTML = `<i class="fas fa-times-circle invalid"></i>`;
+            checkCell.innerHTML = '<i class="fas fa-times-circle invalid"></i>';
         }
         
         // Обновляем итоги
         this.updateTotals();
     }
-
+    
     updateTotals() {
-        const bpList = this.getCurrentBPList();
-        const totals = {};
+        const department = document.getElementById('department-select').value;
+        const monthNumber = document.getElementById('month-select').value;
+        const bpList = this.data.departmentsBP[department] || [];
+        const workingDays = this.getWorkingDaysForMonth(monthNumber);
         
-        // Инициализируем нулями
+        const totals = {};
         bpList.forEach(bp => {
             totals[bp] = 0;
         });
@@ -452,13 +673,12 @@ class PsheTracker {
         const rows = document.querySelectorAll('#distribution-body tr');
         rows.forEach(row => {
             const empId = row.querySelector('input[data-emp]')?.dataset.emp;
+            if (!empId) return;
+            
             const availableInput = document.getElementById(`available-${empId}`);
             const availableDays = parseFloat(availableInput?.value) || 0;
             
-            // Получаем рабочие дни в месяце
-            const workingDays = parseInt(row.cells[5].textContent) || 21;
-            
-            bpList.forEach((bp, index) => {
+            bpList.forEach(bp => {
                 const input = row.querySelector(`input[data-bp="${bp}"]`);
                 if (input) {
                     const share = parseFloat(input.value) || 0;
@@ -473,7 +693,6 @@ class PsheTracker {
             const totalCell = document.getElementById(`total-bp${index + 1}`);
             if (totalCell) {
                 totalCell.textContent = totals[bp].toFixed(2);
-                totalCell.style.display = '';
             }
         });
         
@@ -484,12 +703,7 @@ class PsheTracker {
         // Проверка валидации
         this.updateValidationStatus();
     }
-
-    getCurrentBPList() {
-        const department = document.getElementById('department-select').value;
-        return this.departmentsBP[department] || [];
-    }
-
+    
     updateValidationStatus() {
         const validationStatus = document.getElementById('validation-status');
         const rows = document.querySelectorAll('#distribution-body tr');
@@ -507,47 +721,56 @@ class PsheTracker {
         
         if (allValid && rows.length > 0) {
             validationStatus.innerHTML = '<i class="fas fa-check-circle valid"></i> Все проверки пройдены';
-            validationStatus.classList.remove('invalid');
-            validationStatus.classList.add('valid');
         } else if (rows.length === 0) {
             validationStatus.innerHTML = '<i class="fas fa-info-circle"></i> Нет данных для отображения';
         } else {
             validationStatus.innerHTML = '<i class="fas fa-exclamation-triangle invalid"></i> Есть ошибки в распределении';
-            validationStatus.classList.remove('valid');
-            validationStatus.classList.add('invalid');
         }
     }
-
+    
     showMonthAbsences(monthNumber) {
         const tbody = document.getElementById('absences-table').querySelector('tbody');
         tbody.innerHTML = '';
         
-        const monthAbsences = this.absences.filter(abs => {
-            const startDate = new Date(abs.начало);
-            return (startDate.getMonth() + 1) === parseInt(monthNumber);
+        const month = parseInt(monthNumber);
+        const monthAbsences = this.data.absences.filter(abs => {
+            const startDate = new Date(abs.startDate);
+            return (startDate.getMonth() + 1) === month;
         });
         
+        if (monthAbsences.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Нет отсутствий в этом месяце</td></tr>';
+            return;
+        }
+        
         monthAbsences.forEach(abs => {
-            const employee = this.employees.find(emp => emp.id === abs.сотрудникId);
+            const employee = this.data.employees.find(emp => emp.id === abs.employeeId);
             if (employee) {
                 const row = document.createElement('tr');
+                const startDate = new Date(abs.startDate);
+                const endDate = new Date(abs.endDate);
+                const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+                
                 row.innerHTML = `
-                    <td>${employee.имя}</td>
-                    <td>${formatDate(new Date(abs.начало))} - ${formatDate(new Date(abs.конец))}</td>
-                    <td>${abs.тип}</td>
+                    <td>${employee.name}</td>
+                    <td>${this.formatDate(startDate)} - ${this.formatDate(endDate)}</td>
+                    <td>${abs.type} (${days} дн.)</td>
                 `;
                 tbody.appendChild(row);
             }
         });
     }
-
+    
     saveDistribution() {
         const department = document.getElementById('department-select').value;
         const monthSelect = document.getElementById('month-select');
         const monthNumber = monthSelect.value;
         
         const rows = document.querySelectorAll('#distribution-body tr');
-        const bpList = this.getCurrentBPList();
+        const bpList = this.data.departmentsBP[department] || [];
+        
+        let hasErrors = false;
+        const errorMessages = [];
         
         rows.forEach(row => {
             const empId = row.querySelector('input[data-emp]')?.dataset.emp;
@@ -570,7 +793,9 @@ class PsheTracker {
             
             // Проверяем сумму распределения
             if (Math.abs(totalShare - 1) > 0.01) {
-                alert(`Ошибка у сотрудника ${empId}: сумма распределения ${totalShare.toFixed(2)} не равна 1.0`);
+                const employee = this.data.employees.find(emp => emp.id === empId);
+                errorMessages.push(`${employee?.name || empId}: сумма распределения ${totalShare.toFixed(2)} не равна 1.0`);
+                hasErrors = true;
                 return;
             }
             
@@ -578,73 +803,462 @@ class PsheTracker {
             this.savePSHEData(empId, department, monthNumber, distribution, availableDays);
         });
         
-        this.showStatus('Распределение успешно сохранено');
-        alert('Данные успешно сохранены!');
+        if (hasErrors) {
+            alert('Ошибки при сохранении:\n' + errorMessages.join('\n'));
+            this.showStatus('Есть ошибки в распределении');
+        } else {
+            this.showStatus('Распределение успешно сохранено');
+            alert('Данные успешно сохранены!');
+        }
     }
-
+    
     savePSHEData(employeeId, department, monthNumber, distribution, availableDays) {
         // Ищем существующую запись
-        const existingIndex = this.psheData.findIndex(data => 
-            data.сотрудникId === employeeId && 
-            data.отдел === department && 
-            data.месяц === monthNumber
+        const existingIndex = this.data.psheData.findIndex(data => 
+            data.employeeId === employeeId && 
+            data.department === department && 
+            data.month === monthNumber
         );
         
+        const employee = this.data.employees.find(emp => emp.id === employeeId);
+        
         const data = {
-            сотрудникId: employeeId,
-            отдел: department,
-            месяц: monthNumber,
-            распределение: distribution,
-            доступноДней: availableDays,
-            датаСохранения: new Date().toISOString()
+            id: `PSHE${Date.now()}`,
+            employeeId: employeeId,
+            employeeName: employee ? employee.name : 'Неизвестно',
+            department: department,
+            month: monthNumber,
+            distribution: distribution,
+            availableDays: availableDays,
+            savedAt: new Date().toISOString()
         };
         
         if (existingIndex >= 0) {
-            this.psheData[existingIndex] = data;
+            this.data.psheData[existingIndex] = data;
         } else {
-            this.psheData.push(data);
+            this.data.psheData.push(data);
         }
         
-        this.saveToStorage('psheData', this.psheData);
+        this.saveAllData();
+        this.updatePSHEDataTable();
     }
-
+    
     copyFromPreviousMonth() {
         const currentMonth = document.getElementById('month-select').value;
-        const prevMonth = (parseInt(currentMonth) - 1) || 12;
+        const prevMonth = (parseInt(currentMonth) - 1).toString().padStart(2, '0');
         
-        if (confirm(`Скопировать распределение из ${prevMonth} месяца?`)) {
-            // Логика копирования
-            this.showStatus(`Копирование из ${prevMonth} месяца...`);
-            // В реальной системе здесь будет код копирования данных
-            alert('Функция копирования находится в разработке');
+        if (prevMonth === '00') {
+            alert('Невозможно скопировать из предыдущего месяца для января');
+            return;
+        }
+        
+        if (confirm(`Скопировать распределение из ${this.getMonthName(prevMonth)}?`)) {
+            const department = document.getElementById('department-select').value;
+            
+            // Получаем данные за предыдущий месяц
+            const prevMonthData = this.data.psheData.filter(data => 
+                data.department === department && data.month === prevMonth
+            );
+            
+            if (prevMonthData.length === 0) {
+                alert('Нет данных за предыдущий месяц');
+                return;
+            }
+            
+            // Обновляем текущий месяц данными из предыдущего
+            prevMonthData.forEach(data => {
+                this.savePSHEData(data.employeeId, department, currentMonth, data.distribution, data.availableDays);
+            });
+            
+            // Перезагружаем текущий месяц
+            this.loadMonthData();
+            this.showStatus(`Распределение скопировано из ${this.getMonthName(prevMonth)}`);
         }
     }
-
-    exportData() {
-        const allData = {
-            employees: this.employees,
-            absences: this.absences,
-            businessProcesses: this.businessProcesses,
-            departmentsBP: this.departmentsBP,
-            psheData: this.psheData,
-            exportDate: new Date().toISOString()
+    
+    resetEmployeeDistribution(employeeId) {
+        if (confirm('Сбросить распределение для этого сотрудника?')) {
+            const department = document.getElementById('department-select').value;
+            const bpList = this.data.departmentsBP[department] || [];
+            
+            // Равномерное распределение
+            const equalShare = parseFloat((1 / bpList.length).toFixed(2));
+            
+            // Находим все инпуты для сотрудника и обновляем их
+            bpList.forEach((bp, index) => {
+                const input = document.querySelector(`.distribution-input[data-emp="${employeeId}"][data-bp="${bp}"]`);
+                if (input) {
+                    // Для последнего БП корректируем сумму, чтобы была равна 1.0
+                    const value = (index === bpList.length - 1) ? 
+                        parseFloat((1 - equalShare * (bpList.length - 1)).toFixed(2)) : equalShare;
+                    input.value = value;
+                    this.updateDistributionSum(input);
+                }
+            });
+            
+            this.showStatus('Распределение сброшено');
+        }
+    }
+    
+    // ==================== УПРАВЛЕНИЕ ДАННЫМИ ====================
+    
+    updateEmployeesTable() {
+        const tbody = document.getElementById('employees-body');
+        tbody.innerHTML = '';
+        
+        this.data.employees.forEach(emp => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${emp.id}</td>
+                <td>${emp.name}</td>
+                <td>${emp.department}</td>
+                <td>${emp.position}</td>
+                <td>${this.formatDate(new Date(emp.hireDate))}</td>
+                <td>${emp.dismissalDate ? this.formatDate(new Date(emp.dismissalDate)) : '-'}</td>
+                <td><span class="status-badge ${emp.status === 'Активен' ? 'active' : 'inactive'}">${emp.status}</span></td>
+                <td>${emp.manager || '-'}</td>
+                <td>
+                    <button class="btn btn-small" onclick="psheTracker.editEmployee('${emp.id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-small btn-danger" onclick="psheTracker.deleteEmployee('${emp.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+    
+    updateAbsencesTable() {
+        const tbody = document.getElementById('absences-body');
+        tbody.innerHTML = '';
+        
+        this.data.absences.forEach(abs => {
+            const employee = this.data.employees.find(emp => emp.id === abs.employeeId);
+            const startDate = new Date(abs.startDate);
+            const endDate = new Date(abs.endDate);
+            const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${employee ? employee.name : 'Неизвестно'}</td>
+                <td>${this.formatDate(startDate)}</td>
+                <td>${this.formatDate(endDate)}</td>
+                <td>${abs.type}</td>
+                <td>${days}</td>
+                <td>
+                    <button class="btn btn-small btn-danger" onclick="psheTracker.deleteAbsence('${abs.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+    
+    updatePSHEDataTable() {
+        const tbody = document.getElementById('pshe-data-body');
+        tbody.innerHTML = '';
+        
+        this.data.psheData.forEach(data => {
+            const row = document.createElement('tr');
+            const savedDate = new Date(data.savedAt);
+            
+            // Форматируем распределение
+            const distributionText = Object.entries(data.distribution)
+                .map(([bp, value]) => `${bp}: ${value}`)
+                .join(', ');
+            
+            row.innerHTML = `
+                <td>${data.id}</td>
+                <td>${data.employeeName}</td>
+                <td>${data.department}</td>
+                <td>${this.getMonthName(data.month)} 2025</td>
+                <td>${distributionText}</td>
+                <td>${this.formatDate(savedDate)} ${savedDate.toLocaleTimeString()}</td>
+                <td>
+                    <button class="btn btn-small btn-danger" onclick="psheTracker.deletePSHEData('${data.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+    
+    updateBPList() {
+        const department = document.getElementById('dept-bp-select').value;
+        const bpList = document.getElementById('bp-list');
+        bpList.innerHTML = '';
+        
+        const selectedBP = this.data.departmentsBP[department] || [];
+        
+        this.data.businessProcesses.forEach(bp => {
+            const isChecked = selectedBP.includes(bp.id);
+            const div = document.createElement('div');
+            div.className = 'bp-item';
+            div.innerHTML = `
+                <input type="checkbox" id="bp-${bp.id}" value="${bp.id}" ${isChecked ? 'checked' : ''}>
+                <label for="bp-${bp.id}">
+                    <strong>${bp.id}</strong> - ${bp.name}
+                </label>
+            `;
+            bpList.appendChild(div);
+        });
+    }
+    
+    updateStorageSize() {
+        let totalSize = 0;
+        for (let key in localStorage) {
+            if (localStorage.hasOwnProperty(key)) {
+                totalSize += localStorage[key].length * 2; // UTF-16: 2 bytes per character
+            }
+        }
+        
+        const sizeInKB = (totalSize / 1024).toFixed(2);
+        document.getElementById('storage-size').textContent = `${sizeInKB} KB`;
+    }
+    
+    saveDepartmentBP() {
+        const department = document.getElementById('dept-bp-select').value;
+        const checkboxes = document.querySelectorAll('.bp-item input:checked');
+        const selectedBP = Array.from(checkboxes).map(cb => cb.value);
+        
+        this.data.departmentsBP[department] = selectedBP;
+        this.saveAllData();
+        
+        this.showStatus(`Привязка БП для ${department} сохранена`);
+        alert('Привязка сохранена!');
+    }
+    
+    showAddEmployeeModal() {
+        document.getElementById('emp-id').value = `EMP${(this.data.employees.length + 1).toString().padStart(3, '0')}`;
+        document.getElementById('emp-name').value = '';
+        document.getElementById('emp-dept').value = 'Отдел 1';
+        document.getElementById('emp-position').value = 'Специалист';
+        document.getElementById('emp-hire-date').value = '2025-01-01';
+        document.getElementById('emp-manager').value = '';
+        
+        document.getElementById('add-employee-modal').style.display = 'flex';
+    }
+    
+    saveEmployee() {
+        const id = document.getElementById('emp-id').value.trim();
+        const name = document.getElementById('emp-name').value.trim();
+        const department = document.getElementById('emp-dept').value;
+        const position = document.getElementById('emp-position').value.trim();
+        const hireDate = document.getElementById('emp-hire-date').value;
+        const manager = document.getElementById('emp-manager').value;
+        
+        if (!id || !name || !position || !hireDate) {
+            alert('Пожалуйста, заполните все обязательные поля');
+            return;
+        }
+        
+        // Проверяем, существует ли уже сотрудник с таким ID
+        if (this.data.employees.some(emp => emp.id === id)) {
+            alert('Сотрудник с таким табельным номером уже существует');
+            return;
+        }
+        
+        const newEmployee = {
+            id: id,
+            name: name,
+            department: department,
+            position: position,
+            hireDate: hireDate,
+            dismissalDate: '',
+            status: 'Активен',
+            manager: manager
         };
         
-        const dataStr = JSON.stringify(allData, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        this.data.employees.push(newEmployee);
+        this.saveAllData();
+        this.updateEmployeesTable();
         
-        const exportFileDefaultName = `pshe_data_${new Date().toISOString().slice(0,10)}.json`;
+        // Закрываем модальное окно
+        this.closeModals();
         
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
-        
-        this.showStatus('Данные экспортированы в JSON файл');
+        this.showStatus(`Сотрудник ${name} добавлен`);
+        alert('Сотрудник успешно добавлен!');
     }
-
-    async importData(file) {
-        if (!file) return;
+    
+    editEmployee(employeeId) {
+        // Реализация редактирования сотрудника
+        alert('Редактирование сотрудника находится в разработке');
+    }
+    
+    deleteEmployee(employeeId) {
+        if (confirm('Вы уверены, что хотите удалить этого сотрудника?')) {
+            const index = this.data.employees.findIndex(emp => emp.id === employeeId);
+            if (index !== -1) {
+                const employeeName = this.data.employees[index].name;
+                this.data.employees.splice(index, 1);
+                
+                // Удаляем связанные отсутствия
+                this.data.absences = this.data.absences.filter(abs => abs.employeeId !== employeeId);
+                
+                // Удаляем связанные данные ПШЭ
+                this.data.psheData = this.data.psheData.filter(data => data.employeeId !== employeeId);
+                
+                this.saveAllData();
+                this.updateEmployeesTable();
+                this.updateAbsencesTable();
+                this.updatePSHEDataTable();
+                
+                this.showStatus(`Сотрудник ${employeeName} удален`);
+            }
+        }
+    }
+    
+    showAddAbsenceModal() {
+        const select = document.getElementById('absence-emp-id');
+        select.innerHTML = '';
+        
+        this.data.employees.forEach(emp => {
+            if (emp.status === 'Активен') {
+                const option = document.createElement('option');
+                option.value = emp.id;
+                option.textContent = `${emp.name} (${emp.id})`;
+                select.appendChild(option);
+            }
+        });
+        
+        document.getElementById('absence-start').value = '2025-01-01';
+        document.getElementById('absence-end').value = '2025-01-05';
+        document.getElementById('absence-type').value = 'Отпуск';
+        
+        document.getElementById('add-absence-modal').style.display = 'flex';
+    }
+    
+    saveAbsence() {
+        const employeeId = document.getElementById('absence-emp-id').value;
+        const type = document.getElementById('absence-type').value;
+        const startDate = document.getElementById('absence-start').value;
+        const endDate = document.getElementById('absence-end').value;
+        
+        if (!employeeId || !startDate || !endDate) {
+            alert('Пожалуйста, заполните все обязательные поля');
+            return;
+        }
+        
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (end < start) {
+            alert('Дата завершения не может быть раньше даты начала');
+            return;
+        }
+        
+        const newAbsence = {
+            id: `ABS${Date.now()}`,
+            employeeId: employeeId,
+            startDate: startDate,
+            endDate: endDate,
+            type: type
+        };
+        
+        this.data.absences.push(newAbsence);
+        this.saveAllData();
+        this.updateAbsencesTable();
+        
+        // Закрываем модальное окно
+        this.closeModals();
+        
+        this.showStatus(`Отсутствие добавлено`);
+        alert('Отсутствие успешно добавлено!');
+    }
+    
+    deleteAbsence(absenceId) {
+        if (confirm('Вы уверены, что хотите удалить это отсутствие?')) {
+            const index = this.data.absences.findIndex(abs => abs.id === absenceId);
+            if (index !== -1) {
+                this.data.absences.splice(index, 1);
+                this.saveAllData();
+                this.updateAbsencesTable();
+                this.showStatus('Отсутствие удалено');
+            }
+        }
+    }
+    
+    deletePSHEData(psheId) {
+        if (confirm('Вы уверены, что хотите удалить эти данные ПШЭ?')) {
+            const index = this.data.psheData.findIndex(data => data.id === psheId);
+            if (index !== -1) {
+                this.data.psheData.splice(index, 1);
+                this.saveAllData();
+                this.updatePSHEDataTable();
+                this.showStatus('Данные ПШЭ удалены');
+            }
+        }
+    }
+    
+    // ==================== ЭКСПОРТ/ИМПОРТ ====================
+    
+    exportData(format) {
+        const exportData = {
+            employees: document.getElementById('export-employees').checked ? this.data.employees : [],
+            absences: document.getElementById('export-absences').checked ? this.data.absences : [],
+            departmentsBP: document.getElementById('export-departments').checked ? this.data.departmentsBP : {},
+            psheData: document.getElementById('export-pshe').checked ? this.data.psheData : [],
+            exportDate: new Date().toISOString(),
+            version: '1.0'
+        };
+        
+        if (format === 'json') {
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            const exportFileDefaultName = `pshe_data_${new Date().toISOString().slice(0,10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            this.showStatus('Данные экспортированы в JSON файл');
+        } else if (format === 'csv') {
+            // Экспорт сотрудников в CSV
+            if (exportData.employees.length > 0) {
+                const headers = ['ID', 'ФИО', 'Отдел', 'Должность', 'Дата приема', 'Дата увольнения', 'Статус', 'Руководитель'];
+                const csvContent = [
+                    headers.join(','),
+                    ...exportData.employees.map(emp => [
+                        emp.id,
+                        `"${emp.name}"`,
+                        emp.department,
+                        `"${emp.position}"`,
+                        emp.hireDate,
+                        emp.dismissalDate || '',
+                        emp.status,
+                        emp.manager || ''
+                    ].join(','))
+                ].join('\n');
+                
+                const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `pshe_employees_${new Date().toISOString().slice(0,10)}.csv`);
+                link.click();
+                
+                this.showStatus('Сотрудники экспортированы в CSV файл');
+            } else {
+                alert('Нет данных для экспорта в CSV');
+            }
+        }
+    }
+    
+    importData() {
+        const fileInput = document.getElementById('import-file');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            alert('Пожалуйста, выберите файл для импорта');
+            return;
+        }
+        
+        const importMode = document.querySelector('input[name="import-mode"]:checked').value;
         
         const reader = new FileReader();
         
@@ -652,45 +1266,84 @@ class PsheTracker {
             try {
                 const importedData = JSON.parse(e.target.result);
                 
-                // Проверяем структуру данных
-                if (importedData.employees && importedData.psheData) {
-                    if (confirm('Заменить текущие данные импортированными?')) {
-                        this.employees = importedData.employees;
-                        this.absences = importedData.absences;
-                        this.businessProcesses = importedData.businessProcesses;
-                        this.departmentsBP = importedData.departmentsBP;
-                        this.psheData = importedData.psheData;
-                        
-                        this.saveAllToStorage();
-                        this.showStatus('Данные успешно импортированы');
-                        alert('Данные импортированы! Обновите страницу.');
-                    }
-                } else {
-                    alert('Неверный формат файла');
+                if (!importedData.employees && !importedData.psheData) {
+                    throw new Error('Неверный формат файла');
                 }
+                
+                if (importMode === 'replace') {
+                    // Заменяем все данные
+                    this.data.employees = importedData.employees || [];
+                    this.data.absences = importedData.absences || [];
+                    this.data.departmentsBP = importedData.departmentsBP || {};
+                    this.data.psheData = importedData.psheData || [];
+                } else {
+                    // Объединяем данные
+                    if (importedData.employees) {
+                        importedData.employees.forEach(newEmp => {
+                            const existingIndex = this.data.employees.findIndex(emp => emp.id === newEmp.id);
+                            if (existingIndex === -1) {
+                                this.data.employees.push(newEmp);
+                            }
+                        });
+                    }
+                    
+                    if (importedData.absences) {
+                        importedData.absences.forEach(newAbs => {
+                            const existingIndex = this.data.absences.findIndex(abs => abs.id === newAbs.id);
+                            if (existingIndex === -1) {
+                                this.data.absences.push(newAbs);
+                            }
+                        });
+                    }
+                    
+                    if (importedData.departmentsBP) {
+                        Object.keys(importedData.departmentsBP).forEach(dept => {
+                            this.data.departmentsBP[dept] = importedData.departmentsBP[dept];
+                        });
+                    }
+                    
+                    if (importedData.psheData) {
+                        importedData.psheData.forEach(newData => {
+                            const existingIndex = this.data.psheData.findIndex(data => data.id === newData.id);
+                            if (existingIndex === -1) {
+                                this.data.psheData.push(newData);
+                            }
+                        });
+                    }
+                }
+                
+                this.saveAllData();
+                
+                // Обновляем интерфейс
+                this.loadMonthData();
+                this.updateEmployeesTable();
+                this.updateAbsencesTable();
+                this.updatePSHEDataTable();
+                this.updateBPList();
+                
+                this.showStatus('Данные успешно импортированы');
+                alert('Данные импортированы!');
+                
+                // Сбрасываем поле выбора файла
+                fileInput.value = '';
+                
             } catch (error) {
-                alert('Ошибка при чтении файла: ' + error.message);
+                alert('Ошибка при импорте данных: ' + error.message);
             }
+        };
+        
+        reader.onerror = () => {
+            alert('Ошибка при чтении файла');
         };
         
         reader.readAsText(file);
     }
-
-    saveDepartmentBP() {
-        const department = document.getElementById('dept-bp-select').value;
-        const checkboxes = document.querySelectorAll('.bp-item input:checked');
-        const selectedBP = Array.from(checkboxes).map(cb => cb.value);
-        
-        this.departmentsBP[department] = selectedBP;
-        this.saveToStorage('departmentsBP', this.departmentsBP);
-        
-        this.showStatus(`Привязка БП для ${department} сохранена`);
-        alert('Привязка сохранена!');
-    }
-
+    
+    // ==================== ГОДОВОЙ ОТЧЕТ ====================
+    
     generateAnnualReport() {
         const department = document.getElementById('report-dept-select').value;
-        const bpList = this.departmentsBP[department] || [];
+        const bpList = this.data.departmentsBP[department] || [];
         
         // Инициализируем данные для отчета
         const reportData = {};
@@ -699,14 +1352,14 @@ class PsheTracker {
         });
         
         // Агрегируем данные за год
-        this.psheData.forEach(data => {
-            if (data.отдел === department && data.месяц) {
-                const monthIndex = parseInt(data.месяц) - 1;
-                Object.entries(data.распределение).forEach(([bp, share]) => {
+        this.data.psheData.forEach(data => {
+            if (data.department === department && data.month) {
+                const monthIndex = parseInt(data.month) - 1;
+                const workingDays = this.getWorkingDaysForMonth(data.month);
+                
+                Object.entries(data.distribution).forEach(([bp, share]) => {
                     if (reportData[bp]) {
-                        // Рассчитываем фактические ПШЭ
-                        const workingDays = productionCalendar.months[monthIndex]?.workingDays || 21;
-                        const factPSHE = share * (data.доступноДней / workingDays);
+                        const factPSHE = share * (data.availableDays / workingDays);
                         reportData[bp][monthIndex] += factPSHE;
                     }
                 });
@@ -714,18 +1367,23 @@ class PsheTracker {
         });
         
         // Заполняем таблицу отчета
-        this.fillAnnualReportTable(reportData, bpList);
+        this.fillAnnualReportTable(reportData, bpList, department);
         
         // Строим график
         this.renderAnnualChart(reportData, bpList);
     }
-
-    fillAnnualReportTable(reportData, bpList) {
-        const tbody = document.querySelector('#annual-report-table tbody');
+    
+    fillAnnualReportTable(reportData, bpList, department) {
+        const tbody = document.getElementById('annual-report-body');
         tbody.innerHTML = '';
         
+        if (bpList.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 20px;">Нет данных для отображения</td></tr>`;
+            return;
+        }
+        
         bpList.forEach(bpId => {
-            const bp = this.businessProcesses.find(b => b.id === bpId);
+            const bp = this.data.businessProcesses.find(b => b.id === bpId);
             const rowData = reportData[bpId];
             const total = rowData.reduce((sum, val) => sum + val, 0);
             
@@ -762,16 +1420,28 @@ class PsheTracker {
         
         totalRow.innerHTML = totalCells;
         tbody.appendChild(totalRow);
+        
+        // Обновляем информацию о отделе
+        const activeEmployees = this.data.employees.filter(emp => 
+            emp.department === department && emp.status === 'Активен'
+        ).length;
+        
+        this.showStatus(`Отчет для ${department} сгенерирован (${activeEmployees} активных сотрудников)`);
     }
-
+    
     renderAnnualChart(reportData, bpList) {
         const ctx = document.getElementById('annual-chart').getContext('2d');
         
+        // Уничтожаем предыдущий график, если он существует
+        if (window.annualChart) {
+            window.annualChart.destroy();
+        }
+        
         // Подготавливаем данные для Chart.js
-        const labels = productionCalendar.months.map(m => m.name);
+        const labels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
         const datasets = bpList.map((bpId, index) => {
-            const bp = this.businessProcesses.find(b => b.id === bpId);
-            const colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6'];
+            const bp = this.data.businessProcesses.find(b => b.id === bpId);
+            const colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c'];
             
             return {
                 label: bp ? bp.name : bpId,
@@ -779,14 +1449,10 @@ class PsheTracker {
                 borderColor: colors[index % colors.length],
                 backgroundColor: colors[index % colors.length] + '20',
                 borderWidth: 2,
-                fill: true
+                fill: true,
+                tension: 0.4
             };
         });
-        
-        // Уничтожаем предыдущий график, если он существует
-        if (window.annualChart) {
-            window.annualChart.destroy();
-        }
         
         window.annualChart = new Chart(ctx, {
             type: 'line',
@@ -800,11 +1466,22 @@ class PsheTracker {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Нагрузка по бизнес-процессам в 2025 году'
+                        text: 'Нагрузка по бизнес-процессам в 2025 году',
+                        font: {
+                            size: 16
+                        }
                     },
                     tooltip: {
                         mode: 'index',
-                        intersect: false
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} ПШЭ`;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
                     }
                 },
                 scales: {
@@ -813,130 +1490,44 @@ class PsheTracker {
                         title: {
                             display: true,
                             text: 'ПШЭ'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(1);
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Месяц'
                         }
                     }
                 }
             }
         });
     }
-
-    resetEmployeeDistribution(employeeId) {
-        if (confirm('Сбросить распределение для этого сотрудника?')) {
-            // Находим все инпуты для сотрудника и сбрасываем их
-            const inputs = document.querySelectorAll(`.distribution-input[data-emp="${employeeId}"]`);
-            inputs.forEach(input => {
-                if (input.dataset.bp) {
-                    input.value = '0';
-                }
-            });
-            
-            // Равномерно распределяем
-            const bpInputs = document.querySelectorAll(`.distribution-input[data-emp="${employeeId}"][data-bp]`);
-            const equalShare = (1 / bpInputs.length).toFixed(2);
-            
-            bpInputs.forEach(input => {
-                input.value = equalShare;
-            });
-            
-            // Обновляем сумму
-            this.updateDistributionSum(bpInputs[0]);
-        }
-    }
-
-    clearAllData() {
-        localStorage.clear();
-        this.employees = [];
-        this.absences = [];
-        this.businessProcesses = [];
-        this.departmentsBP = {};
-        this.psheData = [];
-        
-        this.showStatus('Все данные очищены');
-        alert('Все данные очищены. Страница будет перезагружена.');
-        location.reload();
-    }
-
-    resetToInitialData() {
-        this.employees = initialData.employees;
-        this.absences = initialData.absences;
-        this.businessProcesses = initialData.businessProcesses;
-        this.departmentsBP = initialData.departmentsBP;
-        this.psheData = [];
-        
-        this.saveAllToStorage();
-        this.showStatus('Данные сброшены к начальным значениям');
-        alert('Данные сброшены! Страница будет перезагружена.');
-        location.reload();
-    }
-
-    showHelp() {
-        const modal = document.getElementById('help-modal');
-        modal.style.display = 'flex';
-        
-        const closeBtns = document.querySelectorAll('.close-modal');
-        closeBtns.forEach(btn => {
-            btn.onclick = () => {
-                modal.style.display = 'none';
-            };
+    
+    // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+    
+    formatDate(date) {
+        if (!date) return '';
+        return date.toLocaleDateString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
         });
-        
-        window.onclick = (event) => {
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
+    }
+    
+    getMonthName(monthNumber) {
+        const monthNames = {
+            '01': 'Январь', '02': 'Февраль', '03': 'Март', '04': 'Апрель',
+            '05': 'Май', '06': 'Июнь', '07': 'Июль', '08': 'Август',
+            '09': 'Сентябрь', '10': 'Октябрь', '11': 'Ноябрь', '12': 'Декабрь'
         };
+        return monthNames[monthNumber] || 'Неизвестно';
     }
-
-    updatePageContent(pageId) {
-        switch(pageId) {
-            case 'data':
-                this.loadDataPage();
-                break;
-            case 'report':
-                this.generateAnnualReport();
-                break;
-        }
-    }
-
-    loadDataPage() {
-        // Заполняем список БП для выбора
-        const bpList = document.getElementById('bp-list');
-        bpList.innerHTML = '';
-        
-        const department = document.getElementById('dept-bp-select').value;
-        const selectedBP = this.departmentsBP[department] || [];
-        
-        this.businessProcesses.forEach(bp => {
-            const isChecked = selectedBP.includes(bp.id);
-            const div = document.createElement('div');
-            div.className = 'bp-item';
-            div.innerHTML = `
-                <input type="checkbox" id="bp-${bp.id}" value="${bp.id}" ${isChecked ? 'checked' : ''}>
-                <label for="bp-${bp.id}">
-                    <strong>${bp.id}</strong> - ${bp.name}
-                </label>
-            `;
-            bpList.appendChild(div);
-        });
-    }
-
-    saveAllToStorage() {
-        this.saveToStorage('employees', this.employees);
-        this.saveToStorage('absences', this.absences);
-        this.saveToStorage('businessProcesses', this.businessProcesses);
-        this.saveToStorage('departmentsBP', this.departmentsBP);
-        this.saveToStorage('psheData', this.psheData);
-    }
-
-    saveToStorage(key, data) {
-        localStorage.setItem(`pshe_${key}`, JSON.stringify(data));
-    }
-
-    loadFromStorage(key) {
-        const data = localStorage.getItem(`pshe_${key}`);
-        return data ? JSON.parse(data) : null;
-    }
-
+    
     showStatus(message) {
         const statusElement = document.getElementById('status-message');
         statusElement.textContent = message;
@@ -948,22 +1539,16 @@ class PsheTracker {
             }
         }, 5000);
     }
-
-    loadInitialData() {
-        // Загружаем первый месяц по умолчанию
-        setTimeout(() => {
-            this.loadMonthData();
-        }, 100);
+    
+    showHelp() {
+        document.getElementById('help-modal').style.display = 'flex';
     }
-}
-
-// Вспомогательные функции
-function formatDate(date) {
-    return date.toLocaleDateString('ru-RU', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
+    
+    closeModals() {
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.style.display = 'none';
+        });
+    }
 }
 
 // Инициализация приложения
