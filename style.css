@@ -62,13 +62,6 @@ body {
     font-weight: 700;
 }
 
-.version {
-    background: var(--secondary-color);
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 12px;
-}
-
 .nav {
     display: flex;
     gap: 5px;
