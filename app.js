@@ -40,7 +40,7 @@ class PsheTracker {
         this.initEventListeners();
         this.initTabs();
         
-        // Загрузка начального месяца
+        // Автоматическая загрузка начального месяца
         setTimeout(() => {
             this.loadMonthData();
             this.updateEmployeesTable();
@@ -220,11 +220,6 @@ class PsheTracker {
     }
     
     initEventListeners() {
-        // Кнопка загрузки месяца
-        document.getElementById('load-month-btn').addEventListener('click', () => {
-            this.loadMonthData();
-        });
-        
         // Кнопка сохранения распределения
         document.getElementById('save-distribution-btn').addEventListener('click', () => {
             this.saveDistribution();
@@ -377,7 +372,7 @@ class PsheTracker {
         }
     }
     
-    // ==================== ИНТЕРФЕЙС РУКОВОДИТЕЛЯ ====================
+    // ==================== РАСПРЕДЕЛЕНИЕ ПШЭ ====================
     
     loadMonthData() {
         const department = document.getElementById('department-select').value;
@@ -434,6 +429,7 @@ class PsheTracker {
         
         // Получаем рабочие дни для месяца
         const workingDays = this.getWorkingDaysForMonth(monthNumber);
+        const month = parseInt(monthNumber);
         
         // Сортируем сотрудников: сначала активные, потом уволенные
         const sortedEmployees = [...employees].sort((a, b) => {
@@ -445,8 +441,14 @@ class PsheTracker {
         sortedEmployees.forEach((emp, index) => {
             const row = document.createElement('tr');
             
+            // Определяем статус для этого месяца
+            const monthStatus = this.getEmployeeStatusForMonth(emp, month);
+            
             // Рассчитываем доступные дни автоматически
             const availableDays = this.calculateAvailableDays(emp.id, monthNumber, workingDays);
+            
+            // Получаем информацию об отсутствиях/увольнении
+            const absenceInfo = this.getEmployeeAbsenceInfo(emp.id, monthNumber, emp);
             
             // Получаем сохраненное распределение
             const savedDistribution = this.getSavedDistribution(emp.id, department, monthNumber, bpList);
@@ -484,10 +486,11 @@ class PsheTracker {
                 <td>${emp.name}</td>
                 <td>${emp.id}</td>
                 <td>
-                    <span class="status-badge ${emp.status === 'Активен' ? 'active' : 'inactive'}">
-                        ${emp.status}
+                    <span class="status-badge ${monthStatus === 'Активен' ? 'active' : 'inactive'}">
+                        ${monthStatus}
                     </span>
                 </td>
+                <td>${absenceInfo}</td>
                 <td>${workingDays}</td>
                 <td>
                     <input type="number" 
@@ -527,7 +530,180 @@ class PsheTracker {
         return workingDaysMap[monthNumber] || 21;
     }
     
-    getEmployeeAbsences(employeeId, monthNumber) {
+    getEmployeeStatusForMonth(employee, month) {
+        // Если сотрудник имеет дату увольнения
+        if (employee.dismissalDate) {
+            const dismissalDate = new Date(employee.dismissalDate);
+            const dismissalMonth = dismissalDate.getMonth() + 1;
+            
+            // Если уволен в этом месяце или ранее
+            if (dismissalMonth <= month) {
+                // Если уволен именно в этом месяце - показываем "Уволен"
+                if (dismissalMonth === month) {
+                    return 'Уволен';
+                } else {
+                    // Уволен в предыдущем месяце - не показываем в таблице вообще
+                    // но для отображения статуса оставим "Уволен"
+                    return 'Уволен';
+                }
+            }
+        }
+        
+        // Во всех остальных случаях - "Активен"
+        return 'Активен';
+    }
+    
+    getEmployeeAbsenceInfo(employeeId, monthNumber, employee) {
+        const month = parseInt(monthNumber);
+        const year = 2025;
+        
+        // Проверяем увольнение в этом месяце
+        if (employee.dismissalDate) {
+            const dismissalDate = new Date(employee.dismissalDate);
+            const dismissalMonth = dismissalDate.getMonth() + 1;
+            
+            if (dismissalMonth === month) {
+                return `Уволен ${this.formatDate(dismissalDate)}`;
+            }
+        }
+        
+        // Получаем отсутствия сотрудника в этом месяце
+        const absences = this.data.absences.filter(abs => {
+            if (abs.employeeId !== employeeId) return false;
+            
+            const startDate = new Date(abs.startDate);
+            const endDate = new Date(abs.endDate);
+            
+            // Проверяем, что отсутствие в 2025 году
+            if (startDate.getFullYear() !== year || endDate.getFullYear() !== year) return false;
+            
+            // Проверяем, пересекается ли отсутствие с месяцем
+            const startMonth = startDate.getMonth() + 1;
+            const endMonth = endDate.getMonth() + 1;
+            
+            return (startMonth === month || endMonth === month || 
+                   (startMonth < month && endMonth > month));
+        });
+        
+        if (absences.length === 0) {
+            return 'Нет';
+        }
+        
+        // Формируем информацию об отсутствиях
+        const absenceInfo = [];
+        absences.forEach(abs => {
+            const startDate = new Date(abs.startDate);
+            const endDate = new Date(abs.endDate);
+            const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            absenceInfo.push(`${abs.type} ${days} дн.`);
+        });
+        
+        return absenceInfo.join(', ');
+    }
+    
+    calculateAvailableDays(employeeId, monthNumber, totalWorkingDays) {
+        const employee = this.data.employees.find(emp => emp.id === employeeId);
+        if (!employee) return 0;
+        
+        const month = parseInt(monthNumber);
+        const year = 2025;
+        const monthStart = new Date(year, month - 1, 1);
+        const monthEnd = new Date(year, month, 0);
+        
+        // Проверяем увольнение
+        if (employee.dismissalDate) {
+            const dismissalDate = new Date(employee.dismissalDate);
+            const dismissalMonth = dismissalDate.getMonth() + 1;
+            
+            // Если уволен до этого месяца - 0 дней
+            if (dismissalMonth < month) {
+                return 0;
+            }
+            
+            // Если уволен в этом месяце - рассчитываем дни до увольнения
+            if (dismissalMonth === month) {
+                const daysToDismissal = dismissalDate.getDate(); // Дней от начала месяца до увольнения включительно
+                const daysInMonth = monthEnd.getDate();
+                const workingDaysToDismissal = Math.round(daysToDismissal * totalWorkingDays / daysInMonth);
+                
+                // Учитываем отсутствия до даты увольнения
+                const absences = this.getAbsencesInMonth(employeeId, monthNumber);
+                let absentDays = 0;
+                
+                absences.forEach(abs => {
+                    const absenceStart = new Date(abs.startDate);
+                    const absenceEnd = new Date(abs.endDate);
+                    
+                    // Учитываем только отсутствия до даты увольнения
+                    if (absenceStart <= dismissalDate) {
+                        const effectiveEnd = absenceEnd > dismissalDate ? dismissalDate : absenceEnd;
+                        const daysAbsent = Math.ceil((effectiveEnd - absenceStart) / (1000 * 60 * 60 * 24)) + 1;
+                        absentDays += daysAbsent;
+                    }
+                });
+                
+                // Преобразуем календарные дни отсутствия в рабочие дни
+                const absentWorkingDays = Math.round(absentDays * totalWorkingDays / daysInMonth);
+                return Math.max(0, workingDaysToDismissal - absentWorkingDays);
+            }
+        }
+        
+        // Проверяем, принят ли сотрудник после начала месяца
+        if (employee.hireDate) {
+            const hireDate = new Date(employee.hireDate);
+            if (hireDate > monthEnd) {
+                // Сотрудник принят после этого месяца
+                return 0;
+            } else if (hireDate > monthStart) {
+                // Сотрудник принят в течение месяца
+                const daysFromHire = Math.ceil((monthEnd - hireDate) / (1000 * 60 * 60 * 24)) + 1;
+                const daysInMonth = monthEnd.getDate();
+                const workingDaysFromHire = Math.round(daysFromHire * totalWorkingDays / daysInMonth);
+                
+                // Учитываем отсутствия
+                const absences = this.getAbsencesInMonth(employeeId, monthNumber);
+                let absentDays = 0;
+                
+                absences.forEach(abs => {
+                    const absenceStart = new Date(abs.startDate);
+                    const absenceEnd = new Date(abs.endDate);
+                    
+                    // Учитываем только отсутствия после даты приема
+                    if (absenceEnd >= hireDate) {
+                        const effectiveStart = absenceStart < hireDate ? hireDate : absenceStart;
+                        const daysAbsent = Math.ceil((absenceEnd - effectiveStart) / (1000 * 60 * 60 * 24)) + 1;
+                        absentDays += daysAbsent;
+                    }
+                });
+                
+                const absentWorkingDays = Math.round(absentDays * totalWorkingDays / daysInMonth);
+                return Math.max(0, workingDaysFromHire - absentWorkingDays);
+            }
+        }
+        
+        // Активный сотрудник, работающий весь месяц
+        // Получаем отсутствия сотрудника в этом месяце
+        const absences = this.getAbsencesInMonth(employeeId, monthNumber);
+        
+        // Если нет отсутствий - все рабочие дни доступны
+        if (absences.length === 0) {
+            return totalWorkingDays;
+        }
+        
+        // Рассчитываем общее количество дней отсутствия
+        let totalAbsentDays = 0;
+        absences.forEach(abs => {
+            totalAbsentDays += abs.days;
+        });
+        
+        // Преобразуем календарные дни в рабочие
+        const daysInMonth = monthEnd.getDate();
+        const absentWorkingDays = Math.round(totalAbsentDays * totalWorkingDays / daysInMonth);
+        
+        return Math.max(0, totalWorkingDays - absentWorkingDays);
+    }
+    
+    getAbsencesInMonth(employeeId, monthNumber) {
         const month = parseInt(monthNumber);
         const year = 2025;
         
@@ -552,119 +728,6 @@ class PsheTracker {
             const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
             return { ...abs, days };
         });
-    }
-    
-    calculateAvailableDays(employeeId, monthNumber, totalWorkingDays) {
-        const employee = this.data.employees.find(emp => emp.id === employeeId);
-        if (!employee) return 0;
-        
-        const month = parseInt(monthNumber);
-        const year = 2025;
-        const monthStart = new Date(year, month - 1, 1);
-        const monthEnd = new Date(year, month, 0);
-        
-        // 1. Проверяем, принят ли сотрудник после начала месяца
-        if (employee.hireDate) {
-            const hireDate = new Date(employee.hireDate);
-            if (hireDate > monthEnd) {
-                // Сотрудник принят после этого месяца
-                return 0;
-            } else if (hireDate > monthStart) {
-                // Сотрудник принят в течение месяца
-                // Рассчитываем рабочие дни от даты приема до конца месяца
-                const daysFromHire = Math.ceil((monthEnd - hireDate) / (1000 * 60 * 60 * 24)) + 1;
-                const daysInMonth = monthEnd.getDate();
-                const workingDaysFromHire = Math.round(daysFromHire * totalWorkingDays / daysInMonth);
-                
-                // Учитываем отсутствия только после даты приема
-                const absences = this.getEmployeeAbsences(employeeId, monthNumber);
-                let absentDays = 0;
-                
-                absences.forEach(abs => {
-                    const absenceStart = new Date(abs.startDate);
-                    const absenceEnd = new Date(abs.endDate);
-                    
-                    // Учитываем только отсутствия после даты приема
-                    if (absenceEnd >= hireDate) {
-                        const effectiveStart = absenceStart < hireDate ? hireDate : absenceStart;
-                        const daysAbsent = Math.ceil((absenceEnd - effectiveStart) / (1000 * 60 * 60 * 24)) + 1;
-                        absentDays += daysAbsent;
-                    }
-                });
-                
-                // Преобразуем календарные дни отсутствия в рабочие дни
-                const absentWorkingDays = Math.round(absentDays * totalWorkingDays / daysInMonth);
-                const available = Math.max(0, workingDaysFromHire - absentWorkingDays);
-                
-                // Если сотрудник уволен в этом же месяце, учитываем и это
-                if (employee.dismissalDate) {
-                    const dismissalDate = new Date(employee.dismissalDate);
-                    if (dismissalDate >= hireDate && dismissalDate <= monthEnd) {
-                        const daysToDismissal = Math.ceil((dismissalDate - hireDate) / (1000 * 60 * 60 * 24)) + 1;
-                        const workingDaysToDismissal = Math.round(daysToDismissal * totalWorkingDays / daysInMonth);
-                        return Math.min(available, workingDaysToDismissal);
-                    }
-                }
-                
-                return available;
-            }
-        }
-        
-        // 2. Проверяем, уволен ли сотрудник до начала месяца
-        if (employee.dismissalDate) {
-            const dismissalDate = new Date(employee.dismissalDate);
-            if (dismissalDate < monthStart) {
-                // Сотрудник уволен до начала месяца
-                return 0;
-            } else if (dismissalDate <= monthEnd) {
-                // Сотрудник уволен в течение месяца
-                // Рассчитываем рабочие дни до даты увольнения
-                const daysToDismissal = dismissalDate.getDate(); // Дней от начала месяца до увольнения включительно
-                const daysInMonth = monthEnd.getDate();
-                const workingDaysToDismissal = Math.round(daysToDismissal * totalWorkingDays / daysInMonth);
-                
-                // Учитываем отсутствия до даты увольнения
-                const absences = this.getEmployeeAbsences(employeeId, monthNumber);
-                let absentDays = 0;
-                
-                absences.forEach(abs => {
-                    const absenceStart = new Date(abs.startDate);
-                    const absenceEnd = new Date(abs.endDate);
-                    
-                    // Учитываем только отсутствия до даты увольнения
-                    if (absenceStart <= dismissalDate) {
-                        const effectiveEnd = absenceEnd > dismissalDate ? dismissalDate : absenceEnd;
-                        const daysAbsent = Math.ceil((effectiveEnd - absenceStart) / (1000 * 60 * 60 * 24)) + 1;
-                        absentDays += daysAbsent;
-                    }
-                });
-                
-                // Преобразуем календарные дни отсутствия в рабочие дни
-                const absentWorkingDays = Math.round(absentDays * totalWorkingDays / daysInMonth);
-                return Math.max(0, workingDaysToDismissal - absentWorkingDays);
-            }
-        }
-        
-        // 3. Активный сотрудник или уволенный после месяца
-        // Получаем отсутствия сотрудника в этом месяце
-        const absences = this.getEmployeeAbsences(employeeId, monthNumber);
-        
-        // Если нет отсутствий - все рабочие дни доступны
-        if (absences.length === 0) {
-            return totalWorkingDays;
-        }
-        
-        // Рассчитываем общее количество дней отсутствия
-        let totalAbsentDays = 0;
-        absences.forEach(abs => {
-            totalAbsentDays += abs.days;
-        });
-        
-        // Преобразуем календарные дни в рабочие (упрощенная логика)
-        const daysInMonth = monthEnd.getDate();
-        const absentWorkingDays = Math.round(totalAbsentDays * totalWorkingDays / daysInMonth);
-        
-        return Math.max(0, totalWorkingDays - absentWorkingDays);
     }
     
     getSavedDistribution(employeeId, department, monthNumber, bpList) {
@@ -1311,6 +1374,7 @@ class PsheTracker {
             const bp = this.data.businessProcesses.find(b => b.id === bpId);
             const rowData = reportData[bpId];
             const total = rowData.reduce((sum, val) => sum + val, 0);
+            const average = total / 12; // Среднее за год
             
             const row = document.createElement('tr');
             let cells = `<td><strong>${bpId}</strong> - ${bp ? bp.name : ''}</td>`;
@@ -1319,7 +1383,7 @@ class PsheTracker {
                 cells += `<td>${value.toFixed(2)}</td>`;
             });
             
-            cells += `<td><strong>${total.toFixed(2)}</strong></td>`;
+            cells += `<td><strong>${average.toFixed(2)}</strong></td>`;
             row.innerHTML = cells;
             tbody.appendChild(row);
         });
@@ -1342,7 +1406,8 @@ class PsheTracker {
         });
         
         const grandTotal = monthlyTotals.reduce((sum, val) => sum + val, 0);
-        totalCells += `<td><strong>${grandTotal.toFixed(2)}</strong></td>`;
+        const grandAverage = grandTotal / 12;
+        totalCells += `<td><strong>${grandAverage.toFixed(2)}</strong></td>`;
         
         totalRow.innerHTML = totalCells;
         tbody.appendChild(totalRow);
@@ -1404,4 +1469,13 @@ let psheTracker;
 document.addEventListener('DOMContentLoaded', () => {
     psheTracker = new PsheTracker();
     window.psheTracker = psheTracker; // Делаем глобальным для вызовов из HTML
+    
+    // Автоматическая загрузка данных при изменении выбора
+    document.getElementById('department-select').addEventListener('change', () => {
+        psheTracker.loadMonthData();
+    });
+    
+    document.getElementById('month-select').addEventListener('change', () => {
+        psheTracker.loadMonthData();
+    });
 });
