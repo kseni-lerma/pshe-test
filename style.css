@@ -483,6 +483,12 @@ body {
     outline: none;
 }
 
+.distribution-input.readonly {
+    background-color: #f5f5f5;
+    border-color: #ddd;
+    color: #666;
+}
+
 /* Формула */
 .formula-info {
     font-size: 13px;
