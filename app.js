@@ -524,8 +524,8 @@ class PsheTracker {
     
     getWorkingDaysForMonth(monthNumber) {
         const workingDaysMap = {
-            '01': 17, '02': 19, '03': 20, '04': 22, '05': 18, '06': 21,
-            '07': 23, '08': 21, '09': 22, '10': 23, '11': 18, '12': 22
+            '01': 17, '02': 20, '03': 21, '04': 22, '05': 18, '06': 19,
+            '07': 23, '08': 21, '09': 22, '10': 23, '11': 19, '12': 22
         };
         return workingDaysMap[monthNumber] || 21;
     }
