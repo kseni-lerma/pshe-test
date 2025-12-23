@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <!-- Шапка -->
@@ -30,7 +29,7 @@
                 </button>
             </nav>
             <div class="user-info">
-                <span class="username" id="current-user">Сидоров С.С. (Отдел 1)</span>
+                <span class="username" id="current-user">Сидоров С.С.</span>
                 <button class="btn btn-small" id="save-all-btn">
                     <i class="fas fa-save"></i> Сохранить все
                 </button>
@@ -150,38 +149,6 @@
                 <div class="col">
                     <div class="card">
                         <div class="card-header">
-                            <h4><i class="fas fa-calendar-alt"></i> Производственный календарь 2025</h4>
-                        </div>
-                        <div class="table-container">
-                            <table class="compact-table" id="calendar-table">
-                                <thead>
-                                    <tr>
-                                        <th>Месяц</th>
-                                        <th>Рабочих дней</th>
-                                        <th>Выходных</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr><td>Январь</td><td>17</td><td>14</td></tr>
-                                    <tr><td>Февраль</td><td>19</td><td>9</td></tr>
-                                    <tr><td>Март</td><td>20</td><td>11</td></tr>
-                                    <tr><td>Апрель</td><td>22</td><td>8</td></tr>
-                                    <tr><td>Май</td><td>18</td><td>13</td></tr>
-                                    <tr><td>Июнь</td><td>21</td><td>9</td></tr>
-                                    <tr><td>Июль</td><td>23</td><td>8</td></tr>
-                                    <tr><td>Август</td><td>21</td><td>10</td></tr>
-                                    <tr><td>Сентябрь</td><td>22</td><td>8</td></tr>
-                                    <tr><td>Октябрь</td><td>23</td><td>8</td></tr>
-                                    <tr><td>Ноябрь</td><td>18</td><td>12</td></tr>
-                                    <tr><td>Декабрь</td><td>22</td><td>9</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card">
-                        <div class="card-header">
                             <h4><i class="fas fa-exclamation-triangle"></i> Отсутствия в выбранном месяце</h4>
                         </div>
                         <div class="table-container">
@@ -191,6 +158,7 @@
                                         <th>Сотрудник</th>
                                         <th>Период</th>
                                         <th>Тип</th>
+                                        <th>Дней</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -213,7 +181,6 @@
                     <button class="tab-btn" data-tab="bps">Бизнес-процессы</button>
                     <button class="tab-btn" data-tab="departments">Отделы и БП</button>
                     <button class="tab-btn" data-tab="pshe-data">Данные ПШЭ</button>
-                    <button class="tab-btn" data-tab="export">Экспорт/Импорт</button>
                 </div>
             </div>
 
@@ -282,21 +249,16 @@
                         <h3>Бизнес-процессы</h3>
                     </div>
                     <div class="table-container">
-                        <table class="data-table">
+                        <table class="data-table" id="bps-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
                                     <th>Наименование</th>
-                                    <th>Департамент</th>
-                                    <th>Отдел</th>
+                                    <th>Отделы, в которых используется</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr><td>BP01</td><td>Анализ отчетности</td><td>Департамент 1</td><td>Отдел 1, Отдел 2</td></tr>
-                                <tr><td>BP02</td><td>Проведение проверок</td><td>Департамент 1</td><td>Отдел 1</td></tr>
-                                <tr><td>BP03</td><td>Мониторинг рисков</td><td>Департамент 1</td><td>Отдел 1</td></tr>
-                                <tr><td>BP05</td><td>Выездные проверки</td><td>Департамент 1</td><td>Отдел 2</td></tr>
-                                <tr><td>BP06</td><td>Консультирование банков</td><td>Департамент 1</td><td>Отдел 2</td></tr>
+                            <tbody id="bps-body">
+                                <!-- Данные загружаются через JS -->
                             </tbody>
                         </table>
                     </div>
@@ -361,98 +323,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="tab-content" id="export-tab">
-                <div class="row">
-                    <div class="col">
-                        <div class="card">
-                            <div class="card-header">
-                                <h4><i class="fas fa-download"></i> Экспорт данных</h4>
-                            </div>
-                            <div class="card-body">
-                                <p>Экспортируйте все данные системы в JSON файл для резервного копирования.</p>
-                                <div class="export-options">
-                                    <div class="form-group">
-                                        <label>
-                                            <input type="checkbox" id="export-employees" checked> Сотрудники
-                                        </label>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>
-                                            <input type="checkbox" id="export-absences" checked> Отпуска и больничные
-                                        </label>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>
-                                            <input type="checkbox" id="export-departments" checked> Отделы и БП
-                                        </label>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>
-                                            <input type="checkbox" id="export-pshe" checked> Данные ПШЭ
-                                        </label>
-                                    </div>
-                                </div>
-                                <button class="btn btn-primary" id="export-json-btn">
-                                    <i class="fas fa-file-export"></i> Экспорт в JSON
-                                </button>
-                                <button class="btn btn-secondary" id="export-csv-btn">
-                                    <i class="fas fa-file-csv"></i> Экспорт в CSV
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="card">
-                            <div class="card-header">
-                                <h4><i class="fas fa-upload"></i> Импорт данных</h4>
-                            </div>
-                            <div class="card-body">
-                                <p>Импортируйте данные из JSON файла (ранее экспортированного из системы).</p>
-                                <div class="import-area">
-                                    <input type="file" id="import-file" accept=".json" class="form-control">
-                                    <div class="import-options">
-                                        <div class="form-group">
-                                            <label>
-                                                <input type="radio" name="import-mode" value="merge" checked> Объединить с текущими данными
-                                            </label>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>
-                                                <input type="radio" name="import-mode" value="replace"> Заменить все данные
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <button class="btn btn-primary" id="import-btn">
-                                        <i class="fas fa-file-import"></i> Импортировать данные
-                                    </button>
-                                    <div class="warning-box">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                        <strong>Внимание:</strong> Перед импортом рекомендуется сделать резервную копию текущих данных.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h4><i class="fas fa-database"></i> Управление хранилищем</h4>
-                    </div>
-                    <div class="card-body">
-                        <p>Текущий размер данных в локальном хранилище: <span id="storage-size">0 KB</span></p>
-                        <div class="button-group">
-                            <button class="btn btn-warning" id="clear-storage-btn">
-                                <i class="fas fa-broom"></i> Очистить локальное хранилище
-                            </button>
-                            <button class="btn btn-danger" id="reset-all-btn">
-                                <i class="fas fa-redo"></i> Сбросить все к начальным данным
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Страница: Годовой отчет -->
@@ -495,15 +365,6 @@
                             <!-- Данные загружаются через JS -->
                         </tbody>
                     </table>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h3>График нагрузки по БП</h3>
-                </div>
-                <div class="chart-container">
-                    <canvas id="annual-chart"></canvas>
                 </div>
             </div>
         </div>
